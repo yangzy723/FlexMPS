@@ -25,17 +25,18 @@ git submodule update --init --recursive
 ```
 ---
 
+## FlashInfer
+```shell
+cd flashinfer-0.4.1
+python -m pip install -e . --no-deps
+```
+
 ## SgLang
 ```shell
 cd sglang-0.5.4
 pip install --upgrade pip
 python -m pip install -e "python"
-```
-
-## FlashInfer
-```shell
-cd flashinfer-0.4.1
-python -m pip install -e . --no-deps
+pip uninstall torch
 ```
 
 ## PyTorch
@@ -52,7 +53,6 @@ python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1
 ```
 
 ## Tips
-
 - 编译`sglang`时使用最新版本（3.13）的 Python 疑似会出现找不到 Rust 编译器的问题
     - Python 3.11
 - GLIBCXX_3.4.32 not found
