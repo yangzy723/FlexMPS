@@ -65,8 +65,6 @@ python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1
 
 | 模块名称 | 版本 |
 |-----------|--------|
-| flashinfer_python | 0.4.1 |
+| flashinfer | 0.4.1 |
 | torch | 2.8.0 |
-| torch wheel | torch-2.8.0-cp313-cp313-manylinux_2_28_x86_64.whl |
-| nvidia_cutlass_dsl | 4.2.1 |
-| nvidia_cutlass_dsl wheel | nvidia_cutlass_dsl-4.2.1-cp313-cp313-manylinux_2_28_x86_64.whl |
+| sglang | 0.5.4 |
