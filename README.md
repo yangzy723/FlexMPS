@@ -65,6 +65,7 @@ python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1
 
 | 模块名称 | 版本 |
 |-----------|--------|
+| python | 3.11 |
 | flashinfer | 0.4.1 |
 | torch | 2.8.0 |
 | sglang | 0.5.4 |
