@@ -27,13 +27,13 @@ git submodule update --init --recursive
 
 ## FlashInfer
 ```shell
-cd flashinfer-0.4.1
+cd flashinfer-v0.4.1
 python -m pip install -e . --no-deps
 ```
 
 ## SgLang
 ```shell
-cd sglang-0.5.4
+cd sglang-v0.5.4
 pip install --upgrade pip
 python -m pip install -e "python"
 pip uninstall torch
@@ -41,14 +41,14 @@ pip uninstall torch
 
 ## PyTorch
 ```shell
-cd pytorch-2.8.0
+cd pytorch-v2.8.0
 export CMAKE_PREFIX_PATH="${CONDA_PREFIX:-'$(dirname $(which conda))/../'}:${CMAKE_PREFIX_PATH}"
 python setup.py develop
 ```
 
 ## Run
 ```shell
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=1
 python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 64 --input-len 512
 ```
 
