@@ -57,15 +57,24 @@ python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1
     - Python 3.11
 - GLIBCXX_3.4.32 not found
     - conda install -c conda-forge libstdcxx-ng
-- https://github.com/sgl-project/sglang/issues/8661
+- H200 最低支持的 CUDA 版本为 12.4，不支持 gcc-13/g++-13，需要手动软链接为gcc-12
+    - 如果使用 conda，方法为：
+    - ls /usr/bin | grep gcc
+    - cd $(dirname $(which python))
+    - ln -s /usr/bin/gcc-12 gcc
+    - ln -s /usr/bin/g++-12 g++
+- 更改 pytorch 编译时需要的 CUDA 版本
+    - build/CMakeCache.txt -> CMAKE_CUDA_COMPILER:STRING=/usr/local/cuda-12.9/bin/nvcc
 - 自己编译`pytorch 2.8.0`后运行`sglang`，可能需要一个对应版本的`torchvision`，但是`pip`会检查`torchvision`的依赖是否存在（官方的），不存在会帮你下 pytorch
     - pip install torchvision==0.23.0 --no-deps
+- https://github.com/sgl-project/sglang/issues/8661
 
 ## Versions
 
-| 模块名称 | 版本 |
-|-----------|--------|
-| python | 3.11 |
-| flashinfer | 0.4.1 |
-| torch | 2.8.0 |
-| sglang | 0.5.4 |
+|模块名称       | 版本  |
+|--------------|--------|
+|cuda          |12.9  |
+|python        |3.11  |
+|flashinfer    |0.4.1 |
+|torch         |2.8.0 |
+|sglang        |0.5.4 |
