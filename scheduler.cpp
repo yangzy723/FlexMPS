@@ -1,12 +1,18 @@
-#include "IPCProtocol.h"
 #include <iostream>
-#include <string>
+#include <fstream>
 #include <sstream>
-#include <vector>
+#include <string>
 #include <cstring>
+#include <vector>
+#include <thread>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include <chrono>   // 用于获取高精度时间
+#include <iomanip>  // 用于格式化时间
+
+#include "IPCProtocol.h"
 
 std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
@@ -24,7 +30,18 @@ std::pair<bool, std::string> makeDecision(const std::string& kernelType) {
 }
 
 void serviceClient(int clientSocket) {
-    std::cout << "\n[Scheduler] 收到一个新的连接。开始服务该连接 (Socket: " << clientSocket << ")" << std::endl;
+    
+    std::string logFilename = "client_socket_" + std::to_string(clientSocket) + ".log";
+    std::ofstream logStream(logFilename);
+
+    if (!logStream.is_open()) {
+        std::cerr << "[Scheduler-Main] 致命错误: 无法为 Socket " << clientSocket 
+                  << " 创建日志文件: " << logFilename << std::endl;
+        close(clientSocket);
+        return;
+    }
+
+    logStream << "\n[Scheduler] 收到一个新的连接。开始服务该连接 (Socket: " << clientSocket << ")" << std::endl;
 
     char buffer[1024] = {0};
     
@@ -34,9 +51,10 @@ void serviceClient(int clientSocket) {
 
         if (bytesRead <= 0) {
             if (bytesRead == 0) {
-                std::cout << "[Scheduler] 客户端 (Socket " << clientSocket << ") 已优雅断开连接。" << std::endl;
+                logStream << "[Scheduler] 客户端 (Socket " << clientSocket << ") 已优雅断开连接。" << std::endl;
             } else {
-                std::cerr << "[Scheduler] Socket " << clientSocket << " 读取错误，断开连接。" << std::endl;
+                perror(("[Scheduler] Socket " + std::to_string(clientSocket) + " 读取错误").c_str());
+                logStream << "[Scheduler] Socket " << clientSocket << " 读取错误，断开连接。" << std::endl;
             }
             close(clientSocket);
             break;              
@@ -45,11 +63,11 @@ void serviceClient(int clientSocket) {
         std::string message(buffer, bytesRead);
         message.erase(message.find_last_not_of("\r\n") + 1); 
 
-        std::cout << "[Scheduler] 收到请求: " << message << std::endl;
+        logStream << "[Scheduler] 收到请求: " << message << std::endl;
 
         auto parts = split(message, '|');
         if (parts.size() != 2) {
-            std::cerr << "[Scheduler] 请求格式错误: " << message << "，断开连接。" << std::endl;
+            logStream << "[Scheduler] 请求格式错误: " << message << "，断开连接。" << std::endl;
             close(clientSocket);
             break;
         }
@@ -61,17 +79,21 @@ void serviceClient(int clientSocket) {
         bool allowed = decision.first;
         std::string reason = decision.second;
 
-        std::cout << "[Scheduler] 决策 (ID: " << reqId << "): " 
+        logStream << "[Scheduler] G (ID: " << reqId << "): " 
                   << (allowed ? "允许" : "拒绝") << std::endl;
 
         std::string response = createResponseMessage(reqId, allowed, reason);
         
         if (send(clientSocket, response.c_str(), response.length(), 0) < 0) {
-             std::cerr << "[Scheduler] 发送响应失败，连接断开。" << std::endl;
+             logStream << "[Scheduler] 发送响应失败，连接断开。" << std::endl;
              close(clientSocket);
              break;
         }
     }
+    
+    logStream << "[Scheduler] 线程 (Socket: " << clientSocket << ") 退出。" << std::endl;
+    
+    logStream.close();
 }
 
 int main() {
@@ -99,7 +121,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, 10) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
@@ -112,8 +134,12 @@ int main() {
             perror("accept");
             continue;
         }
-        serviceClient(new_socket); 
+        
+        std::thread clientThread(serviceClient, new_socket);
+
+        clientThread.detach(); 
     }
 
+    close(server_fd);
     return 0;
 }
