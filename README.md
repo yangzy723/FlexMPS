@@ -67,7 +67,7 @@ export Torch_DIR=$(python -c "import torch; print(torch.utils.cmake_prefix_path)
 ## Run
 ```shell
 export CUDA_VISIBLE_DEVICES=1
-python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 32 --input-len 64 --disable-cuda-graph
+python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 64 --input-len 512 --mem-fraction-static 0.6 --disable-cuda-graph
 ```
 
 ## Tips
