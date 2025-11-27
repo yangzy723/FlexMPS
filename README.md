@@ -70,7 +70,20 @@ export CUDA_VISIBLE_DEVICES=1
 python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 64 --input-len 512 --mem-fraction-static 0.6 --disable-cuda-graph
 
 # nsys
-nsys profile --trace=cuda --sample=process-tree -   -cudabacktrace=kernel:0 -o output_report python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 64 --input-len 512 --mem-fraction-static 0.6 --disable-cuda-graph
+nsys profile \
+  --trace=cuda,nvtx,osrt \
+  --python-backtrace=cuda \
+  --cudabacktrace=kernel:0 \
+  --python-sampling=true \
+  --gpu-metrics-devices=all \
+  -o sglang_report \
+  --force-overwrite=true \
+  python -m sglang.bench_one_batch \
+  --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ \
+  --batch-size 64 \
+  --input-len 512 \
+  --mem-fraction-static 0.6 \
+  --disable-cuda-graph
 ```
 
 ## Tips

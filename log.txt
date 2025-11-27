@@ -1,272 +1,74 @@
-Time	Total Time	Instances	Avg	Med	Min	Max	StdDev	Name
-57.0%	1.266 s	192	6.596 ms	6.070 ms	1.528 ms	12.387 ms	4.183 ms	nvjet_tst_320x128_64x3_1x2_h_bz_coopB_TNT
-7.4%	163.659 ms	64	2.557 ms	2.580 ms	2.253 ms	2.658 ms	84.724 μs	nvjet_tst_192x192_64x4_2x1_v_bz_coopB_TNN
-4.2%	92.650 ms	2304	40.212 μs	40.113 μs	9.120 μs	78.497 μs	22.209 μs	void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cute::C<(int)128>, cute::C<(int)128>, cute::C<(int)128>>, (int)128, cutlass::bfloat16_t, float, cutlass::arch::Sm90, (bool)1, (bool)0, (bool)0, (bool)1, (bool)1, (bool)0, (bool)0, (bool)1, (bool)1, (bool)1, (bool)1, (bool)0, cutlass::bfloat16_t>, flash::CollectiveEpilogueFwd<cute::tuple<cute::C<(int)128>, cute::C<(int)128>, cute::C<(int)128>>, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cutlass::bfloat16_t, cutlass::arch::Sm90, (int)256, (bool)1, (bool)1, (bool)1, (bool)0>, flash::VarlenDynamicPersistentTileScheduler<(int)128, (int)128, (int)256, (int)128, (bool)1, (bool)1, (bool)1, (bool)1, (bool)1, (bool)1>>>>(T1::Params)
-3.0%	66.337 ms	2368	28.013 μs	5.312 μs	4.160 μs	829.739 μs	130.713 μs	void flashinfer::activation::act_and_mul_kernel<__nv_bfloat16, &silu<float>>(T1 *, const T1 *, int)
-2.5%	54.567 ms	4736	11.521 μs	3.680 μs	2.816 μs	296.388 μs	46.593 μs	void flashinfer::norm::FusedAddRMSNormKernel<(unsigned int)8, __nv_bfloat16>(T2 *, T2 *, T2 *, unsigned int, unsigned int, unsigned int, float, float)
-2.2%	48.055 ms	4736	10.146 μs	4.896 μs	3.328 μs	209.090 μs	32.010 μs	void at::native::index_elementwise_kernel<(int)128, (int)4, void at::native::gpu_index_kernel<void at::native::index_put_kernel_impl<at::native::OpaqueType<(int)2>>(at::TensorIterator &, c10::ArrayRef<long>, c10::ArrayRef<long>)::[lambda(char *, const char *, long) (instance 1)]>(at::TensorIteratorBase &, c10::ArrayRef<long>, c10::ArrayRef<long>, const T1 &, bool)::[lambda(int) (instance 1)]>(long, T3)
-1.8%	41.094 ms	64	642.086 μs	650.057 μs	523.816 μs	668.489 μs	30.432 μs	void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cute::C<(int)128>, cute::C<(int)128>, cute::C<(int)128>>, (int)128, cutlass::bfloat16_t, float, cutlass::arch::Sm90, (bool)1, (bool)0, (bool)0, (bool)1, (bool)1, (bool)0, (bool)0, (bool)1, (bool)1, (bool)1, (bool)0, (bool)0, cutlass::bfloat16_t>, flash::CollectiveEpilogueFwd<cute::tuple<cute::C<(int)128>, cute::C<(int)128>, cute::C<(int)128>>, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cutlass::bfloat16_t, cutlass::arch::Sm90, (int)256, (bool)1, (bool)1, (bool)0, (bool)0>, flash::VarlenDynamicPersistentTileScheduler<(int)128, (int)128, (int)256, (int)128, (bool)0, (bool)1, (bool)1, (bool)1, (bool)1, (bool)1>>>>(T1::Params)
-1.7%	38.707 ms	129	300.050 μs	1.664 μs	960 ns	605.192 μs	302.350 μs	void at::native::vectorized_elementwise_kernel<(int)8, at::native::FillFunctor<c10::BFloat16>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-1.5%	32.373 ms	2304	14.050 μs	3.616 μs	2.976 μs	384.357 μs	61.041 μs	void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 12)]::operator ()() const::[lambda(c10::BFloat16) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.8%	16.689 ms	256	65.191 μs	65.137 μs	62.561 μs	68.961 μs	1.164 μs	nvjet_tst_128x8_64x12_2x1_v_bz_TNT
-0.6%	12.728 ms	64	198.879 μs	199.171 μs	194.690 μs	200.355 μs	1.081 μs	void flashinfer::BatchQKApplyRotaryPosIdsCosSinCacheKernel<(bool)0, (unsigned int)128, (unsigned int)8, (unsigned int)16, __nv_bfloat16, long>(T5 *, T5 *, T5 *, T5 *, float *, T6 *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long)
-0.5%	11.477 ms	2880	3.985 μs	3.936 μs	2.112 μs	7.424 μs	1.450 μs	void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)
-0.4%	9.192 ms	128	71.813 μs	71.905 μs	69.249 μs	74.081 μs	952 ns	nvjet_tst_448x64_64x3_1x2_h_bz_coopB_TNN
-0.4%	8.635 ms	256	33.730 μs	33.648 μs	32.032 μs	35.873 μs	801 ns	nvjet_tst_128x8_64x12_4x1_v_bz_splitK_TNT
-0.4%	8.471 ms	320	26.472 μs	26.400 μs	23.393 μs	30.305 μs	1.963 μs	nvjet_tst_96x128_64x7_2x1_v_bz_TNN
-0.4%	8.382 ms	128	65.484 μs	65.616 μs	63.969 μs	67.809 μs	824 ns	nvjet_tst_128x16_64x11_2x1_v_bz_TNT
-0.3%	7.580 ms	192	39.481 μs	39.248 μs	38.240 μs	41.633 μs	814 ns	nvjet_tst_128x80_64x8_1x2_h_bz_splitK_TNT
-0.3%	7.448 ms	68	109.528 μs	93.649 μs	92.289 μs	361.125 μs	63.100 μs	nvjet_tst_256x128_64x4_1x2_h_bz_coopA_TNT
-0.3%	7.350 ms	2304	3.190 μs	3.200 μs	2.176 μs	5.472 μs	561 ns	void flashinfer::BatchQKApplyRotaryPosIdsCosSinCacheHeadParallelismKernel<(bool)0, (unsigned int)128, (unsigned int)8, (unsigned int)16, __nv_bfloat16, long>(T5 *, T5 *, T5 *, T5 *, float *, T6 *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long, unsigned long)
-0.3%	5.917 ms	1024	5.778 μs	5.760 μs	5.408 μs	6.784 μs	180 ns	void flash::prepare_varlen_num_blocks_kernel<(int)8, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int *, int *, int *, int *, int *, bool, bool, bool, int)
-0.3%	5.886 ms	128	45.981 μs	45.985 μs	44.704 μs	48.897 μs	820 ns	nvjet_tst_128x128_64x6_2x1_v_bz_splitK_TNT
-0.3%	5.781 ms	64	90.321 μs	90.241 μs	89.025 μs	92.769 μs	784 ns	nvjet_tst_128x248_64x4_4x1_v_bz_coopA_TNT
-0.3%	5.655 ms	64	88.356 μs	88.321 μs	86.881 μs	90.178 μs	729 ns	nvjet_tst_128x240_64x4_4x1_v_bz_coopA_TNT
-0.2%	5.541 ms	64	86.582 μs	86.609 μs	85.185 μs	88.641 μs	767 ns	nvjet_tst_128x232_64x4_4x1_v_bz_coopA_TNT
-0.2%	5.441 ms	64	85.014 μs	85.025 μs	83.265 μs	87.297 μs	825 ns	nvjet_tst_128x224_64x4_4x1_v_bz_coopA_TNT
-0.2%	5.356 ms	64	83.692 μs	83.649 μs	82.305 μs	85.410 μs	579 ns	nvjet_tst_128x216_64x4_4x1_v_bz_coopA_TNT
-0.2%	5.356 ms	128	41.845 μs	41.648 μs	40.448 μs	44.833 μs	890 ns	nvjet_tst_128x112_64x7_1x2_h_bz_splitK_TNT
-0.2%	5.163 ms	128	40.338 μs	40.176 μs	39.137 μs	42.209 μs	771 ns	nvjet_tst_128x96_64x7_1x2_h_bz_splitK_TNT
-0.2%	5.134 ms	256	20.056 μs	19.776 μs	18.112 μs	23.008 μs	1.188 μs	nvjet_tst_128x64_64x8_1x2_h_bz_TNT
-0.2%	5.015 ms	64	78.359 μs	78.177 μs	76.961 μs	80.929 μs	881 ns	nvjet_tst_128x208_64x5_4x1_v_bz_coopA_TNT
-0.2%	4.916 ms	64	76.820 μs	76.801 μs	74.785 μs	78.657 μs	883 ns	nvjet_tst_112x192_64x5_2x1_v_bz_TNN
-0.2%	4.906 ms	64	76.660 μs	76.785 μs	74.753 μs	79.138 μs	980 ns	nvjet_tst_128x200_64x5_4x1_v_bz_coopA_TNT
-0.2%	4.882 ms	128	38.142 μs	37.872 μs	37.152 μs	39.616 μs	734 ns	nvjet_tst_128x64_64x8_1x2_h_bz_splitK_TNT
-0.2%	4.741 ms	64	74.080 μs	74.193 μs	72.705 μs	75.937 μs	771 ns	nvjet_tst_128x184_64x5_4x1_v_bz_coopA_TNT
-0.2%	4.646 ms	64	72.596 μs	72.497 μs	70.497 μs	74.849 μs	1.040 μs	nvjet_tst_128x176_64x5_4x1_v_bz_TNT
-0.2%	4.595 ms	64	71.794 μs	71.713 μs	69.889 μs	73.601 μs	857 ns	nvjet_tst_128x168_64x5_4x1_v_bz_TNT
-0.2%	4.566 ms	2304	1.981 μs	1.952 μs	1.056 μs	3.424 μs	463 ns	void cutlass::device_kernel<flash::FlashAttnFwdCombine<cute::tuple<cute::C<(int)8>, cute::C<(int)128>>, (int)5, (int)256, (int)1, (bool)0, (bool)1, cutlass::bfloat16_t, float, cutlass::arch::Sm90>>(T1::Params)
-0.2%	4.474 ms	64	69.909 μs	69.889 μs	68.001 μs	72.001 μs	776 ns	nvjet_tst_256x160_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.461 ms	64	69.696 μs	69.681 μs	67.873 μs	71.553 μs	941 ns	nvjet_tst_256x152_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.418 ms	64	69.030 μs	68.929 μs	67.361 μs	71.329 μs	946 ns	nvjet_tst_256x144_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.390 ms	64	68.589 μs	68.769 μs	66.753 μs	71.297 μs	1.006 μs	nvjet_tst_256x136_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.377 ms	256	17.097 μs	16.960 μs	16.224 μs	18.752 μs	562 ns	nvjet_tst_64x8_64x16_4x1_v_bz_TNT
-0.2%	4.301 ms	64	67.196 μs	67.185 μs	65.249 μs	69.537 μs	1.058 μs	nvjet_tst_256x112_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.291 ms	64	67.042 μs	67.057 μs	64.801 μs	69.569 μs	947 ns	nvjet_tst_256x104_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.290 ms	64	67.030 μs	67.169 μs	65.408 μs	68.961 μs	865 ns	nvjet_tst_256x80_64x5_4x1_v_bz_TNT
-0.2%	4.264 ms	64	66.627 μs	66.705 μs	64.896 μs	68.801 μs	790 ns	nvjet_tst_256x72_64x5_4x1_v_bz_TNT
-0.2%	4.241 ms	64	66.270 μs	66.273 μs	64.801 μs	68.225 μs	814 ns	nvjet_tst_256x96_64x4_4x1_v_bz_coopA_TNT
-0.2%	4.239 ms	64	66.229 μs	66.401 μs	64.833 μs	67.809 μs	706 ns	nvjet_tst_128x32_64x10_2x1_v_bz_TNT
-0.2%	4.238 ms	64	66.220 μs	66.193 μs	64.737 μs	68.865 μs	865 ns	nvjet_tst_256x88_64x4_4x1_v_bz_TNT
-0.2%	4.214 ms	64	65.848 μs	66.001 μs	64.449 μs	67.424 μs	688 ns	nvjet_tst_128x24_64x11_2x1_v_bz_TNT
-0.2%	4.211 ms	64	65.800 μs	65.937 μs	64.065 μs	68.193 μs	880 ns	nvjet_tst_256x64_64x5_4x1_v_bz_TNT
-0.2%	4.198 ms	128	32.793 μs	32.480 μs	32.033 μs	34.368 μs	655 ns	nvjet_tst_128x16_64x11_2x1_v_bz_splitK_TNT
-0.2%	4.191 ms	64	65.484 μs	65.552 μs	64.033 μs	67.393 μs	763 ns	nvjet_tst_256x48_64x5_4x1_v_bz_TNT
-0.2%	4.185 ms	64	65.396 μs	65.489 μs	63.937 μs	68.001 μs	818 ns	nvjet_tst_256x56_64x5_4x1_v_bz_TNT
-0.2%	4.135 ms	64	64.611 μs	64.673 μs	63.072 μs	66.785 μs	847 ns	nvjet_tst_256x40_64x5_4x1_v_bz_TNT
-0.2%	3.822 ms	192	19.908 μs	19.937 μs	16.736 μs	22.880 μs	1.477 μs	nvjet_tst_64x96_64x10_2x1_v_bz_TNT
-0.2%	3.455 ms	74	46.693 μs	44.256 μs	4.384 μs	100.962 μs	30.934 μs	void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (int)4, TrivialOffsetCalculator<(int)1, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)1>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)
-0.1%	3.276 ms	64	51.193 μs	48.977 μs	44.769 μs	59.681 μs	5.257 μs	nvjet_tst_192x80_64x6_2x1_v_bz_splitK_TNT
-0.1%	3.248 ms	64	50.745 μs	50.689 μs	49.409 μs	52.705 μs	610 ns	nvjet_tst_64x224_64x5_2x1_v_bz_splitK_TNT
-0.1%	3.186 ms	256	12.445 μs	12.353 μs	12.128 μs	13.984 μs	299 ns	nvjet_tst_64x8_64x16_2x1_v_bz_splitK_TNT
-0.1%	3.166 ms	128	24.737 μs	24.592 μs	20.897 μs	29.153 μs	2.178 μs	nvjet_tst_144x64_64x8_2x1_v_bz_TNN
-0.1%	3.121 ms	192	16.256 μs	16.160 μs	14.720 μs	18.112 μs	799 ns	nvjet_tst_64x64_64x13_2x1_v_bz_TNT
-0.1%	2.951 ms	576	5.124 μs	5.056 μs	4.544 μs	6.400 μs	330 ns	void flash::prepare_varlen_num_blocks_kernel<(int)4, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int *, int *, int *, int *, int *, bool, bool, bool, int)
-0.1%	2.858 ms	64	44.661 μs	44.528 μs	43.456 μs	46.273 μs	726 ns	nvjet_tst_128x120_64x6_1x2_h_bz_splitK_TNT
-0.1%	2.768 ms	64	43.249 μs	42.976 μs	42.241 μs	44.673 μs	723 ns	nvjet_tst_256x96_64x4_1x2_h_bz_coopA_splitK_TNT
-0.1%	2.685 ms	128	20.979 μs	20.960 μs	19.232 μs	22.272 μs	601 ns	nvjet_tst_64x112_64x9_2x1_v_bz_TNT
-0.1%	2.626 ms	64	41.035 μs	40.816 μs	39.904 μs	42.945 μs	812 ns	nvjet_tst_128x104_64x7_1x2_h_bz_splitK_TNT
-0.1%	2.544 ms	64	39.757 μs	39.377 μs	38.848 μs	41.537 μs	781 ns	nvjet_tst_128x88_64x7_1x2_h_bz_splitK_TNT
-0.1%	2.482 ms	128	19.393 μs	19.200 μs	18.368 μs	21.953 μs	685 ns	nvjet_tst_96x64_64x10_1x2_h_bz_TNN
-0.1%	2.472 ms	64	38.621 μs	38.352 μs	37.664 μs	40.448 μs	747 ns	nvjet_tst_128x72_64x8_1x2_h_bz_splitK_TNT
-0.1%	2.440 ms	64	38.126 μs	38.000 μs	36.896 μs	39.616 μs	765 ns	nvjet_tst_128x112_64x7_2x1_v_bz_splitK_TNT
-0.1%	2.378 ms	64	37.154 μs	36.769 μs	36.161 μs	38.592 μs	755 ns	nvjet_tst_128x96_64x7_2x1_v_bz_splitK_TNT
-0.1%	2.365 ms	64	36.953 μs	36.736 μs	36.128 μs	38.592 μs	696 ns	nvjet_tst_128x56_64x9_1x2_h_bz_splitK_TNT
-0.1%	2.351 ms	64	36.734 μs	36.368 μs	35.777 μs	38.273 μs	760 ns	nvjet_tst_128x88_64x7_2x1_v_bz_splitK_TNT
-0.1%	2.340 ms	64	36.562 μs	36.080 μs	35.521 μs	38.176 μs	807 ns	nvjet_tst_128x80_64x8_2x1_v_bz_splitK_TNT
-0.1%	2.335 ms	64	36.489 μs	36.353 μs	35.041 μs	38.209 μs	939 ns	nvjet_tst_96x64_64x10_2x1_v_bz_splitK_TNN
-0.1%	2.308 ms	64	36.068 μs	35.713 μs	35.200 μs	37.697 μs	746 ns	nvjet_tst_128x72_64x8_2x1_v_bz_splitK_TNT
-0.1%	2.251 ms	64	35.178 μs	34.849 μs	34.273 μs	36.545 μs	743 ns	nvjet_tst_128x56_64x9_2x1_v_bz_splitK_TNT
-0.1%	2.223 ms	64	34.740 μs	34.432 μs	33.825 μs	36.256 μs	718 ns	nvjet_tst_128x48_64x9_2x1_v_bz_splitK_TNT
-0.1%	2.219 ms	64	34.671 μs	34.177 μs	33.697 μs	36.065 μs	773 ns	nvjet_tst_128x40_64x10_2x1_v_bz_splitK_TNT
-0.1%	2.215 ms	128	17.303 μs	17.120 μs	16.416 μs	19.200 μs	604 ns	nvjet_tst_64x16_64x16_4x1_v_bz_TNT
-0.1%	2.158 ms	64	33.711 μs	33.489 μs	32.992 μs	35.361 μs	652 ns	nvjet_tst_128x32_64x10_2x1_v_bz_splitK_TNT
-0.1%	2.139 ms	64	33.415 μs	33.089 μs	32.672 μs	34.944 μs	653 ns	nvjet_tst_128x24_64x11_2x1_v_bz_splitK_TNT
-0.1%	2.098 ms	128	16.394 μs	16.352 μs	15.200 μs	17.793 μs	509 ns	nvjet_tst_64x72_64x12_2x1_v_bz_TNT
-0.1%	2.053 ms	8	256.635 μs	257.891 μs	251.012 μs	261.316 μs	3.641 μs	nvjet_tst_256x8_64x6_2x1_v_bz_TNT
-0.1%	1.814 ms	128	14.168 μs	14.048 μs	13.440 μs	15.297 μs	376 ns	nvjet_tst_64x48_64x15_1x2_h_bz_TNT
-0.1%	1.764 ms	448	3.937 μs	3.936 μs	3.616 μs	4.896 μs	167 ns	void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int *, int *, int *, int *, int *, bool, bool, bool, int)
-0.1%	1.752 ms	128	13.683 μs	13.536 μs	12.992 μs	15.296 μs	482 ns	nvjet_tst_64x32_64x16_1x2_h_bz_TNT
-0.1%	1.652 ms	64	25.807 μs	25.520 μs	24.736 μs	29.376 μs	828 ns	nvjet_tst_192x56_64x6_1x2_h_bz_TNT
-0.1%	1.633 ms	128	12.759 μs	12.656 μs	12.416 μs	14.048 μs	344 ns	nvjet_tst_64x16_64x16_2x1_v_bz_splitK_TNT
-0.1%	1.597 ms	64	24.954 μs	24.720 μs	24.096 μs	27.873 μs	716 ns	nvjet_tst_64x208_64x6_4x1_v_bz_TNT
-0.1%	1.533 ms	64	23.947 μs	23.616 μs	23.168 μs	27.424 μs	781 ns	nvjet_tst_128x104_64x7_4x2_h_bz_TNT
-0.1%	1.448 ms	64	22.629 μs	22.320 μs	21.889 μs	26.657 μs	836 ns	nvjet_tst_64x176_64x7_4x1_v_bz_TNT
-0.1%	1.422 ms	64	22.217 μs	21.984 μs	21.472 μs	25.184 μs	728 ns	nvjet_tst_64x168_64x7_4x1_v_bz_TNT
-0.1%	1.400 ms	64	21.873 μs	21.537 μs	21.057 μs	25.152 μs	769 ns	nvjet_tst_64x152_64x7_4x1_v_bz_TNT
-0.1%	1.394 ms	32	43.571 μs	43.056 μs	41.953 μs	48.385 μs	1.678 μs	void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)
-0.1%	1.356 ms	64	21.180 μs	20.928 μs	20.512 μs	24.353 μs	729 ns	nvjet_tst_128x80_64x8_4x2_h_bz_TNT
-0.1%	1.326 ms	64	20.720 μs	20.688 μs	19.712 μs	22.208 μs	452 ns	nvjet_tst_64x120_64x9_2x1_v_bz_TNT
-0.1%	1.311 ms	64	20.481 μs	20.224 μs	19.744 μs	23.745 μs	725 ns	nvjet_tst_64x144_64x8_4x1_v_bz_TNT
-0.1%	1.300 ms	64	20.318 μs	20.080 μs	19.520 μs	23.201 μs	729 ns	nvjet_tst_64x136_64x8_4x1_v_bz_TNT
-0.1%	1.278 ms	64	19.973 μs	20.352 μs	16.352 μs	21.728 μs	1.177 μs	nvjet_tst_96x64_64x10_2x1_v_bz_TNN
-0.1%	1.270 ms	64	19.847 μs	19.616 μs	19.104 μs	22.048 μs	644 ns	nvjet_tst_64x112_64x9_4x1_v_bz_TNT
-0.1%	1.253 ms	64	19.583 μs	19.584 μs	18.688 μs	20.352 μs	372 ns	nvjet_tst_64x104_64x10_2x1_v_bz_TNT
-0.1%	1.230 ms	64	19.220 μs	18.944 μs	18.496 μs	21.728 μs	714 ns	nvjet_tst_64x96_64x10_4x1_v_bz_TNT
-0.1%	1.209 ms	64	18.888 μs	18.688 μs	17.920 μs	21.472 μs	679 ns	nvjet_tst_64x88_64x11_4x1_v_bz_TNT
-0.1%	1.205 ms	64	18.825 μs	18.592 μs	17.888 μs	21.632 μs	732 ns	nvjet_tst_64x104_64x10_4x1_v_bz_TNT
-0.1%	1.197 ms	64	18.699 μs	18.400 μs	17.697 μs	21.568 μs	717 ns	nvjet_tst_64x80_64x11_4x1_v_bz_TNT
-0.1%	1.191 ms	64	18.613 μs	18.336 μs	17.664 μs	22.977 μs	795 ns	nvjet_tst_64x72_64x12_4x1_v_bz_TNT
-0.1%	1.183 ms	4	295.868 μs	295.172 μs	289.380 μs	303.748 μs	7.401 μs	nvjet_tst_512x64_64x2_2x1_v_bz_coopB_TNN
-0.1%	1.172 ms	64	18.314 μs	18.128 μs	17.504 μs	20.928 μs	656 ns	nvjet_tst_64x56_64x14_4x1_v_bz_TNT
-0.1%	1.171 ms	64	18.300 μs	18.272 μs	17.568 μs	19.136 μs	360 ns	nvjet_tst_64x88_64x11_2x1_v_bz_TNT
-0.1%	1.170 ms	64	18.288 μs	17.984 μs	17.441 μs	20.833 μs	755 ns	nvjet_tst_64x48_64x15_4x1_v_bz_TNT
-0.1%	1.167 ms	64	18.227 μs	18.080 μs	17.184 μs	20.321 μs	587 ns	nvjet_tst_64x40_64x16_4x1_v_bz_TNT
-0.1%	1.162 ms	64	18.150 μs	17.936 μs	17.313 μs	21.216 μs	738 ns	nvjet_tst_64x64_64x13_4x1_v_bz_TNT
-0.1%	1.139 ms	64	17.804 μs	17.600 μs	16.768 μs	19.552 μs	686 ns	nvjet_tst_64x32_64x16_4x1_v_bz_TNT
-0.1%	1.128 ms	256	4.408 μs	4.416 μs	4.064 μs	5.312 μs	178 ns	void flash::prepare_varlen_num_blocks_kernel<(int)2, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int *, int *, int *, int *, int *, bool, bool, bool, int)
-0.1%	1.112 ms	64	17.380 μs	17.248 μs	16.736 μs	18.881 μs	523 ns	nvjet_tst_64x24_64x16_4x1_v_bz_TNT
-0.0%	1.101 ms	64	17.207 μs	17.200 μs	16.544 μs	18.144 μs	332 ns	nvjet_tst_64x80_64x11_2x1_v_bz_TNT
-0.0%	1.053 ms	64	16.454 μs	16.320 μs	16.032 μs	17.441 μs	367 ns	nvjet_tst_128x32_64x10_4x1_v_bz_TNT
-0.0%	1.034 ms	4	258.427 μs	258.371 μs	256.643 μs	260.324 μs	1.506 μs	nvjet_tst_256x16_64x6_2x1_v_bz_TNT
-0.0%	903.211 μs	64	14.112 μs	14.048 μs	13.537 μs	15.328 μs	371 ns	nvjet_tst_64x56_64x14_1x2_h_bz_TNT
-0.0%	893.770 μs	64	13.965 μs	13.792 μs	13.344 μs	15.904 μs	495 ns	nvjet_tst_64x40_64x16_1x2_h_bz_TNT
-0.0%	864.649 μs	64	13.510 μs	13.376 μs	12.993 μs	14.848 μs	429 ns	nvjet_tst_64x48_64x15_2x1_v_bz_splitK_TNT
-0.0%	858.765 μs	64	13.418 μs	13.248 μs	12.897 μs	16.192 μs	532 ns	nvjet_tst_64x24_64x16_1x2_h_bz_TNT
-0.0%	837.548 μs	64	13.086 μs	13.024 μs	12.640 μs	14.144 μs	347 ns	nvjet_tst_64x32_64x16_2x1_v_bz_splitK_TNT
-0.0%	830.409 μs	64	12.975 μs	12.848 μs	12.608 μs	14.752 μs	433 ns	nvjet_tst_64x24_64x16_2x1_v_bz_splitK_TNT
-0.0%	696.521 μs	2	348.260 μs	348.260 μs	346.692 μs	349.829 μs	2.218 μs	nvjet_tst_128x240_64x4_2x1_v_bz_coopA_TNT
-0.0%	694.346 μs	2	347.173 μs	347.173 μs	345.861 μs	348.485 μs	1.855 μs	nvjet_tst_256x120_64x4_1x2_h_bz_coopA_TNT
-0.0%	672.841 μs	2	336.420 μs	336.420 μs	335.780 μs	337.061 μs	905 ns	nvjet_tst_256x112_64x4_1x2_h_bz_coopA_TNT
-0.0%	668.650 μs	2	334.325 μs	334.325 μs	332.837 μs	335.813 μs	2.104 μs	nvjet_tst_128x224_64x4_2x1_v_bz_coopA_TNT
-0.0%	656.330 μs	2	328.165 μs	328.165 μs	326.693 μs	329.637 μs	2.081 μs	nvjet_tst_256x104_64x4_1x2_h_bz_coopA_TNT
-0.0%	642.888 μs	2	321.444 μs	321.444 μs	320.516 μs	322.372 μs	1.312 μs	nvjet_tst_256x96_64x4_1x2_h_bz_coopA_TNT
-0.0%	630.088 μs	2	315.044 μs	315.044 μs	312.836 μs	317.252 μs	3.122 μs	nvjet_tst_128x208_64x5_2x1_v_bz_coopA_TNT
-0.0%	605.961 μs	2	302.980 μs	302.980 μs	302.309 μs	303.652 μs	949 ns	nvjet_tst_128x184_64x5_2x1_v_bz_coopA_TNT
-0.0%	602.378 μs	85	7.086 μs	1.344 μs	928 ns	428.518 μs	46.504 μs	void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-0.0%	598.857 μs	2	299.428 μs	299.428 μs	298.468 μs	300.389 μs	1.358 μs	nvjet_tst_128x176_64x5_2x1_v_bz_TNT
-0.0%	595.944 μs	2	297.972 μs	297.972 μs	297.828 μs	298.116 μs	203 ns	nvjet_tst_128x168_64x5_2x1_v_bz_TNT
-0.0%	591.846 μs	74	7.997 μs	2.880 μs	2.368 μs	192.771 μs	30.760 μs	void flashinfer::norm::RMSNormKernel<(unsigned int)8, __nv_bfloat16>(T2 *, T2 *, T2 *, unsigned int, unsigned int, unsigned int, float, float)
-0.0%	585.672 μs	2	292.836 μs	292.836 μs	292.452 μs	293.220 μs	543 ns	nvjet_tst_256x160_64x4_2x1_v_bz_coopA_TNT
-0.0%	585.384 μs	2	292.692 μs	292.692 μs	289.380 μs	296.004 μs	4.683 μs	nvjet_tst_256x152_64x4_2x1_v_bz_coopA_TNT
-0.0%	583.816 μs	2	291.908 μs	291.908 μs	291.428 μs	292.388 μs	678 ns	nvjet_tst_256x136_64x4_2x1_v_bz_coopA_TNT
-0.0%	583.368 μs	2	291.684 μs	291.684 μs	290.980 μs	292.388 μs	995 ns	nvjet_tst_512x80_64x2_2x1_v_bz_coopA_TNT
-0.0%	581.192 μs	2	290.596 μs	290.596 μs	290.308 μs	290.884 μs	407 ns	nvjet_tst_512x72_64x2_2x1_v_bz_coopA_TNT
-0.0%	578.024 μs	2	289.012 μs	289.012 μs	287.492 μs	290.532 μs	2.149 μs	nvjet_tst_512x56_64x2_2x1_v_bz_coopA_TNT
-0.0%	576.200 μs	2	288.100 μs	288.100 μs	287.844 μs	288.356 μs	362 ns	nvjet_tst_256x144_64x4_2x1_v_bz_coopA_TNT
-0.0%	569.255 μs	2	284.627 μs	284.627 μs	282.947 μs	286.308 μs	2.376 μs	nvjet_tst_256x128_64x4_2x1_v_bz_coopA_TNT
-0.0%	567.304 μs	2	283.652 μs	283.652 μs	281.220 μs	286.084 μs	3.439 μs	nvjet_tst_256x120_64x4_2x1_v_bz_coopA_TNT
-0.0%	562.663 μs	2	281.331 μs	281.331 μs	279.939 μs	282.724 μs	1.969 μs	nvjet_tst_256x112_64x4_2x1_v_bz_coopA_TNT
-0.0%	560.264 μs	2	280.132 μs	280.132 μs	279.556 μs	280.708 μs	814 ns	nvjet_tst_512x48_64x3_2x1_v_bz_coopA_TNT
-0.0%	556.263 μs	2	278.131 μs	278.131 μs	276.547 μs	279.716 μs	2.240 μs	nvjet_tst_512x40_64x3_2x1_v_bz_TNT
-0.0%	553.191 μs	2	276.595 μs	276.595 μs	275.907 μs	277.284 μs	973 ns	nvjet_tst_256x104_64x4_2x1_v_bz_coopA_TNT
-0.0%	551.688 μs	2	275.844 μs	275.844 μs	275.044 μs	276.644 μs	1.131 μs	nvjet_tst_256x96_64x4_2x1_v_bz_coopA_TNT
-0.0%	550.888 μs	2	275.444 μs	275.444 μs	275.396 μs	275.492 μs	67 ns	nvjet_tst_512x32_64x3_2x1_v_bz_TNT
-0.0%	550.536 μs	2	275.268 μs	275.268 μs	275.108 μs	275.428 μs	226 ns	nvjet_tst_512x24_64x3_2x1_v_bz_TNT
-0.0%	548.648 μs	2	274.324 μs	274.324 μs	273.956 μs	274.692 μs	520 ns	nvjet_tst_256x88_64x4_2x1_v_bz_TNT
-0.0%	462.572 μs	64	7.227 μs	7.201 μs	7.008 μs	7.873 μs	152 ns	void flash::prepare_varlen_num_blocks_kernel<(int)16, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int *, int *, int *, int *, int *, bool, bool, bool, int)
-0.0%	425.544 μs	66	6.447 μs	2.512 μs	1.856 μs	131.938 μs	22.339 μs	void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)
-0.0%	224.838 μs	30	7.494 μs	7.376 μs	7.008 μs	8.512 μs	354 ns	void at::native::index_elementwise_kernel<(int)128, (int)4, void at::native::gpu_index_kernel<void at::native::index_kernel_impl<at::native::OpaqueType<(int)4>>(at::TensorIteratorBase &, c10::ArrayRef<long>, c10::ArrayRef<long>)::[lambda(char *, const char *, long) (instance 1)]>(at::TensorIteratorBase &, c10::ArrayRef<long>, c10::ArrayRef<long>, const T1 &, bool)::[lambda(int) (instance 1)]>(long, T3)
-0.0%	142.213 μs	94	1.512 μs	1.440 μs	1.152 μs	2.336 μs	260 ns	void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(int) (instance 1)], std::array<char *, (unsigned long)2>, (int)4, TrivialOffsetCalculator<(int)1, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)1>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)
-0.0%	137.408 μs	68	2.020 μs	2.016 μs	1.792 μs	2.400 μs	143 ns	void at_cuda_detail::cub::DeviceScanKernel<at_cuda_detail::cub::detail::scan::policy_hub<int, int, int, unsigned int, std::plus<int>>::Policy1000, const int *, int *, at_cuda_detail::cub::ScanTileState<int, (bool)1>, std::plus<int>, at_cuda_detail::cub::NullType, unsigned int, int, (bool)0>(T2, T3, T4, int, T5, T6, T7)
-0.0%	117.570 μs	37	3.177 μs	3.104 μs	2.656 μs	3.649 μs	305 ns	void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<long, at::native::func_wrapper_t<long, at::native::sum_functor<long, long, long>::operator ()(at::TensorIterator &)::[lambda(long, long) (instance 1)]>, unsigned int, long, (int)4, (int)4>>(T3)
-0.0%	112.482 μs	36	3.124 μs	3.040 μs	2.688 μs	3.680 μs	314 ns	void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<int, at::native::func_wrapper_t<int, at::native::MaxNanFunctor<int>>, unsigned int, int, (int)4, (int)4>>(T3)
-0.0%	106.978 μs	30	3.565 μs	3.488 μs	3.360 μs	4.160 μs	205 ns	void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 4)]::operator ()() const::[lambda(long) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.0%	99.521 μs	76	1.309 μs	1.344 μs	1.152 μs	1.600 μs	116 ns	void at::native::vectorized_elementwise_kernel<(int)2, at::native::FillFunctor<long>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-0.0%	95.457 μs	68	1.403 μs	1.424 μs	1.120 μs	1.728 μs	171 ns	void at_cuda_detail::cub::DeviceScanInitKernel<at_cuda_detail::cub::ScanTileState<int, (bool)1>>(T1, int)
-0.0%	95.041 μs	30	3.168 μs	3.200 μs	2.816 μs	4.256 μs	302 ns	void at::native::index_elementwise_kernel<(int)128, (int)4, void at::native::gpu_index_kernel<void at::native::index_put_kernel_impl<at::native::OpaqueType<(int)4>>(at::TensorIterator &, c10::ArrayRef<long>, c10::ArrayRef<long>)::[lambda(char *, const char *, long) (instance 1)]>(at::TensorIteratorBase &, c10::ArrayRef<long>, c10::ArrayRef<long>, const T1 &, bool)::[lambda(int) (instance 1)]>(long, T3)
-0.0%	91.298 μs	60	1.521 μs	1.472 μs	1.184 μs	2.304 μs	235 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	85.826 μs	39	2.200 μs	2.144 μs	1.792 μs	2.752 μs	279 ns	void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 4)]::operator ()() const::[lambda(long) (instance 1)], std::array<char *, (unsigned long)2>, (int)4, TrivialOffsetCalculator<(int)1, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)1>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)
-0.0%	82.051 μs	30	2.735 μs	2.688 μs	2.624 μs	3.297 μs	144 ns	void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(int) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.0%	77.186 μs	30	2.572 μs	2.544 μs	2.336 μs	2.976 μs	156 ns	void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 4)]::operator ()() const::[lambda(long) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.0%	70.144 μs	30	2.338 μs	2.352 μs	1.856 μs	2.752 μs	199 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::BUnaryFunctor<int, int, int, at::native::binary_internal::div_floor_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(int, int) (instance 1)]>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	56.513 μs	12	4.709 μs	4.336 μs	2.752 μs	7.520 μs	1.790 μs	void at::native::<unnamed>::indexSelectSmallIndex<c10::BFloat16, long, unsigned int, (int)2, (int)2, (int)-2>(at::cuda::detail::TensorInfo<T1, T3>, at::cuda::detail::TensorInfo<const T1, T3>, at::cuda::detail::TensorInfo<const T2, T3>, int, int, T3, long)
-0.0%	55.072 μs	34	1.619 μs	1.600 μs	1.344 μs	2.688 μs	254 ns	void at::native::vectorized_elementwise_kernel<(int)2, at::native::CUDAFunctorOnSelf_add<long>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	42.593 μs	30	1.419 μs	1.424 μs	1.216 μs	1.696 μs	135 ns	triton_poi_fused_clamp_sub_0
-0.0%	39.329 μs	37	1.062 μs	1.056 μs	896 ns	1.280 μs	108 ns	void at::native::elementwise_kernel_with_index<int, at::native::arange_cuda_out(const c10::Scalar &, const c10::Scalar &, const c10::Scalar &, at::Tensor &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(long) (instance 1)]>(T1, T2, function_traits<T2>::result_type *)
-0.0%	38.849 μs	1	38.849 μs	38.849 μs	38.849 μs	38.849 μs	0 ns	void at::native::CatArrayBatchedCopy_alignedK_contig<at::native::OpaqueType<(unsigned int)4>, unsigned int, (int)2, (int)128, (int)1, (int)16>(T1 *, at::native::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::TensorSizeStride<T2, (unsigned int)4>, int, T2)
-0.0%	35.232 μs	4	8.808 μs	10.832 μs	2.624 μs	10.944 μs	4.123 μs	void at::native::elementwise_kernel_with_index<int, at::native::arange_cuda_out(const c10::Scalar &, const c10::Scalar &, const c10::Scalar &, at::Tensor &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 4)]::operator ()() const::[lambda(long) (instance 1)]>(T1, T2, function_traits<T2>::result_type *)
-0.0%	31.392 μs	1	31.392 μs	31.392 μs	31.392 μs	31.392 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<float>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-0.0%	24.417 μs	1	24.417 μs	24.417 μs	24.417 μs	24.417 μs	0 ns	void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.0%	23.681 μs	1	23.681 μs	23.681 μs	23.681 μs	23.681 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::sin_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	21.632 μs	1	21.632 μs	21.632 μs	21.632 μs	21.632 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::cos_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	9.920 μs	2	4.960 μs	4.960 μs	4.896 μs	5.024 μs	90 ns	write_req_to_token_pool_triton
-0.0%	6.208 μs	2	3.104 μs	3.104 μs	3.104 μs	3.104 μs	0 ns	compute_position_kernel
-0.0%	5.696 μs	4	1.424 μs	1.392 μs	1.248 μs	1.664 μs	174 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::BUnaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	4.864 μs	2	2.432 μs	2.432 μs	2.208 μs	2.656 μs	316 ns	void at_cuda_detail::cub::DeviceScanKernel<at_cuda_detail::cub::detail::scan::policy_hub<long, long, long, unsigned int, std::plus<long>>::Policy1000, const long *, long *, at_cuda_detail::cub::ScanTileState<long, (bool)1>, std::plus<long>, at_cuda_detail::cub::NullType, unsigned int, long, (bool)0>(T2, T3, T4, int, T5, T6, T7)
-0.0%	4.864 μs	3	1.621 μs	1.632 μs	1.408 μs	1.824 μs	208 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::reciprocal_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	4.096 μs	3	1.365 μs	1.376 μs	1.184 μs	1.536 μs	176 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::AUnaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	3.841 μs	2	1.920 μs	1.920 μs	1.184 μs	2.657 μs	1.041 μs	void at::native::elementwise_kernel_with_index<int, at::native::arange_cuda_out(const c10::Scalar &, const c10::Scalar &, const c10::Scalar &, at::Tensor &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(long) (instance 1)]>(T1, T2, function_traits<T2>::result_type *)
-0.0%	3.456 μs	2	1.728 μs	1.728 μs	1.696 μs	1.760 μs	45 ns	void at_cuda_detail::cub::DeviceScanInitKernel<at_cuda_detail::cub::ScanTileState<long, (bool)1>>(T1, int)
-0.0%	3.329 μs	1	3.329 μs	3.329 μs	3.329 μs	3.329 μs	0 ns	void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl<at::native::<unnamed>::pow_tensor_tensor_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float, float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)
-0.0%	3.008 μs	2	1.504 μs	1.504 μs	1.344 μs	1.664 μs	226 ns	void at::native::vectorized_elementwise_kernel<(int)4, void at::native::compare_scalar_kernel<float>(at::TensorIteratorBase &, at::native::<unnamed>::OpType, T1)::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	2.848 μs	2	1.424 μs	1.424 μs	1.408 μs	1.440 μs	22 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::where_kernel_impl(at::TensorIterator &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 11)]::operator ()() const::[lambda(bool, float, float) (instance 1)], std::array<char *, (unsigned long)4>>(int, T2, T3)
-0.0%	2.656 μs	2	1.328 μs	1.328 μs	1.248 μs	1.408 μs	113 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>>(int, T2, T3)
-0.0%	2.592 μs	2	1.296 μs	1.296 μs	1.184 μs	1.408 μs	158 ns	void at::native::vectorized_elementwise_kernel<(int)8, at::native::FillFunctor<c10::Half>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-0.0%	2.496 μs	1	2.496 μs	2.496 μs	2.496 μs	2.496 μs	0 ns	nvjet_hsh_64x8_64x16_1x2_h_bz_NNT
-0.0%	1.792 μs	1	1.792 μs	1.792 μs	1.792 μs	1.792 μs	0 ns	void at::native::CatArrayBatchedCopy_alignedK_contig<at::native::OpaqueType<(unsigned int)8>, unsigned int, (int)1, (int)128, (int)1, (int)16>(T1 *, at::native::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::TensorSizeStride<T2, (unsigned int)4>, int, T2)
-0.0%	1.440 μs	1	1.440 μs	1.440 μs	1.440 μs	1.440 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnOther_add<float>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	1.440 μs	1	1.440 μs	1.440 μs	1.440 μs	1.440 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<float>, std::array<char *, (unsigned long)2>>(int, T2, T3)
-0.0%	1.409 μs	1	1.409 μs	1.409 μs	1.409 μs	1.409 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<float>, std::array<char *, (unsigned long)3>>(int, T2, T3)
-0.0%	1.408 μs	1	1.408 μs	1.408 μs	1.408 μs	1.408 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)2, at::native::FillFunctor<double>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-0.0%	1.216 μs	1	1.216 μs	1.216 μs	1.216 μs	1.216 μs	0 ns	void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<bool>, std::array<char *, (unsigned long)1>>(int, T2, T3)
-
-
-
+一次典型的 PyTorch 方法调用的 trace：                 
+                                            
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 378, in __init__
-[rank0]:     self.capture()
+[rank0]:     self.capture()                         
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 497, in capture
 [rank0]:     ) = self.capture_one_batch_size(bs, forward)
 [rank0]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 676, in capture_one_batch_size
-[rank0]:     run_once()
+[rank0]:     run_once()                             
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/model_executor/cuda_graph_runner.py", line 663, in run_once
 [rank0]:     logits_output_or_pp_proxy_tensors = forward(
 [rank0]:                                         ^^^^^^^^
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/utils/_contextlib.py", line 120, in decorate_context
-[rank0]:     return func(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return func(*args, **kwargs)           
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^           
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/models/llama.py", line 469, in forward
-[rank0]:     hidden_states = self.model(
-[rank0]:                     ^^^^^^^^^^^
+[rank0]:     hidden_states = self.model(            
+[rank0]:                     ^^^^^^^^^^^            
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
 [rank0]:     return self._call_impl(*args, **kwargs)
 [rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1784, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return forward_call(*args, **kwargs)   
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/models/llama.py", line 342, in forward
-[rank0]:     hidden_states, residual = layer(
-[rank0]:                               ^^^^^^
+[rank0]:     hidden_states, residual = layer(       
+[rank0]:                               ^^^^^^       
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
 [rank0]:     return self._call_impl(*args, **kwargs)
 [rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1784, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return forward_call(*args, **kwargs)   
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^       
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/models/llama.py", line 266, in forward
-[rank0]:     hidden_states = self.self_attn(
-[rank0]:                     ^^^^^^^^^^^^^^^
+[rank0]:     hidden_states = self.self_attn(            
+[rank0]:                     ^^^^^^^^^^^^^^^            
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return self._call_impl(*args, **kwargs)    
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1784, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return forward_call(*args, **kwargs)       
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^       
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/models/llama.py", line 194, in forward
-[rank0]:     qkv, _ = self.qkv_proj(hidden_states)
-[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     qkv, _ = self.qkv_proj(hidden_states)      
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^      
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return self._call_impl(*args, **kwargs)    
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    
 [rank0]:   File "/home/yzy/rebuild-pytorch/pytorch/torch/nn/modules/module.py", line 1784, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return forward_call(*args, **kwargs)       
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^       
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/layers/linear.py", line 427, in forward
 [rank0]:     output_parallel = self.quant_method.apply(self, input_, bias)
 [rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/layers/quantization/unquant.py", line 131, in apply
-[rank0]:     return F.linear(x, layer.weight, bias)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     return F.linear(x, layer.weight, bias) 
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+
+
 
 PATH: Rebuilt-PyTorch/pytorch-v2.8.0/aten/src/ATen/cuda/CUDABlas.cpp
 splitKreduce_kernel 这个 kernel 的执行似乎总和一个矩阵乘法相关，即 矩阵乘 -> splitKreduce_kernel，那是否一起拦截即可？
 即在 cublasGemmEx 内部实现中，nvjet_tst_128x128_64x6_2x1_v_bz_splitK_TNT 和 void cublasLt::splitKreduce_kernel总是在一起
 
-
 PATH: Rebuilt-PyTorch/sglang-v0.5.4/python/sglang/srt/layers/attention/flashattention_backend.py
 flash::prepare_varlen_num_blocks_kernel, cutlass::device_kernel<flash::FlashAttnFwdSm90...>, cutlass::device_kernel<flash::FlashAttnFwdCombine...>
 这三个 kernels 也是在 flash_attn_with_kvcache 方法内部实现中由 torch.ops.sgl_kernel.fwd.default 依次启动的
+
+PATH: Rebuilt-PyTorch/pytorch-v2.8.0/aten/src/ATen/cuda/cub.cuh
+InclusiveScan 方法是 NVIDIA cub 库中的方法（cub/cub/device/device_scan.cuh），其内部实现会在 Invoke() 方法内逐次调用 DeviceScanInitKernel 和 DeviceScanKernel
+（cub/cub/device/dispatch/dispatch_scan.cuh）
 
 Time	Total Time	Instances	    Name
 0.0%	42.368 μs	30	            triton_poi_fused_clamp_sub_0
