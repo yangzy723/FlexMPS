@@ -55,20 +55,3 @@
 [rank0]:   File "/home/yzy/rebuild-pytorch/sglang/python/sglang/srt/layers/quantization/unquant.py", line 131, in apply
 [rank0]:     return F.linear(x, layer.weight, bias) 
 [rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-
-
-
-PATH: Rebuilt-PyTorch/pytorch-v2.8.0/aten/src/ATen/cuda/CUDABlas.cpp
-splitKreduce_kernel 这个 kernel 的执行似乎总和一个矩阵乘法相关，即 矩阵乘 -> splitKreduce_kernel，那是否一起拦截即可？
-即在 cublasGemmEx 内部实现中，nvjet_tst_128x128_64x6_2x1_v_bz_splitK_TNT 和 void cublasLt::splitKreduce_kernel总是在一起
-
-PATH: Rebuilt-PyTorch/sglang-v0.5.4/python/sglang/srt/layers/attention/flashattention_backend.py
-flash::prepare_varlen_num_blocks_kernel, cutlass::device_kernel<flash::FlashAttnFwdSm90...>, cutlass::device_kernel<flash::FlashAttnFwdCombine...>
-这三个 kernels 也是在 flash_attn_with_kvcache 方法内部实现中由 torch.ops.sgl_kernel.fwd.default 依次启动的
-
-PATH: Rebuilt-PyTorch/pytorch-v2.8.0/aten/src/ATen/cuda/cub.cuh
-InclusiveScan 方法是 NVIDIA cub 库中的方法（cub/cub/device/device_scan.cuh），其内部实现会在 Invoke() 方法内逐次调用 DeviceScanInitKernel 和 DeviceScanKernel
-（cub/cub/device/dispatch/dispatch_scan.cuh）
-
-Time	Total Time	Instances	    Name
-0.0%	42.368 μs	30	            triton_poi_fused_clamp_sub_0
