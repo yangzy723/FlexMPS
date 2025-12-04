@@ -1,6 +1,7 @@
 scheduler
 result.jsonl
 logs/
+model/
 
 *.nsys-rep
 *.png
