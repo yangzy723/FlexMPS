@@ -9,17 +9,18 @@
 #include <atomic>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <chrono>
 #include <iomanip>
 #include <ctime>
 #include <map>
 #include <algorithm>
+#include <csignal>
 
 #include "IPCProtocol.h"
 
-// ---------------- 全局变量 ----------------
+// ============================================================
+//  全局变量
+// ============================================================
 
 std::mutex logMutex;           
 std::ofstream globalLogFile;   
@@ -28,6 +29,26 @@ long long connectionCount = 0;
 std::atomic<long long> globalKernelId(0);
 std::mutex statsMutex;
 std::map<std::string, long long> currentLogKernelStats;
+
+// 运行控制标志
+std::atomic<bool> g_running(true);
+
+// 共享内存通道
+ClientChannel* g_pytorchChannel = nullptr;
+ClientChannel* g_sglangChannel = nullptr;
+
+// ============================================================
+//  信号处理
+// ============================================================
+
+void signalHandler(int signum) {
+    std::cout << "\n[Scheduler] 收到信号 " << signum << "，正在关闭..." << std::endl;
+    g_running.store(false, std::memory_order_release);
+}
+
+// ============================================================
+//  统计与日志函数
+// ============================================================
 
 // 注意：调用此函数时，调用者必须已经持有了 logMutex
 void flushStatsAndReset() {
@@ -67,8 +88,6 @@ void flushStatsAndReset() {
 
     currentLogKernelStats.clear();
 }
-
-// ---------------- 日志辅助函数 ----------------
 
 std::string getCurrentTimeStrForFile() {
     auto now = std::chrono::system_clock::now();
@@ -112,7 +131,9 @@ void recordKernelStat(const std::string& kernelType) {
     currentLogKernelStats[kernelType]++;
 }
 
-// ---------------- 业务逻辑 ----------------
+// ============================================================
+//  业务逻辑
+// ============================================================
 
 std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
@@ -128,39 +149,40 @@ std::pair<bool, std::string> makeDecision(const std::string& kernelType) {
     return {true, "OK"};
 }
 
-void serviceClient(int clientSocket) {
+// ============================================================
+//  处理单个客户端通道的线程函数
+// ============================================================
+
+void serviceClientChannel(ClientChannel* channel, const std::string& clientName) {
     std::stringstream ss;
-    ss << "[Scheduler] 收到连接 (Socket: " << clientSocket << ")";
-    writeLog(ss.str()); 
+    ss << "[Scheduler] 开始监听 " << clientName << " 通道";
+    writeLog(ss.str());
+    std::cout << ss.str() << std::endl;
 
-    char buffer[1024] = {0};
-    
-    while (true) {
-        memset(buffer, 0, 1024);
-        ssize_t bytesRead = read(clientSocket, buffer, 1023);
+    // 标记调度器已准备好
+    channel->scheduler_ready.store(true, std::memory_order_release);
 
-        if (bytesRead <= 0) {
-            ss.str(""); 
-            if (bytesRead == 0) {
-                ss << "[Scheduler] Socket " << clientSocket << " 已断开。";
-            } else {
-                ss << "[Scheduler] Socket " << clientSocket << " 读取错误。";
-            }
-            writeLog(ss.str());
-            close(clientSocket);
-            break;              
+    char buffer[SPSC_MSG_SIZE];
+
+    while (g_running.load(std::memory_order_acquire)) {
+        // 非阻塞尝试读取请求
+        if (!channel->request_queue.try_pop(buffer, SPSC_MSG_SIZE)) {
+            // 队列为空，短暂休眠后继续
+            usleep(100);  // 100 微秒
+            continue;
         }
 
-        std::string message(buffer, bytesRead);
+        std::string message(buffer);
+        
+        // 去除尾部换行符
         while (!message.empty() && (message.back() == '\n' || message.back() == '\r')) {
             message.pop_back();
         }
 
         auto parts = split(message, '|');
         if (parts.size() < 3) {
-            writeLog("[Scheduler] 格式错误 (" + message + ")，断开。");
-            close(clientSocket);
-            break;
+            writeLog("[Scheduler] 格式错误 (" + message + ")");
+            continue;
         }
         
         std::string kernelType = parts[0];     
@@ -180,78 +202,134 @@ void serviceClient(int clientSocket) {
         std::string reason = decision.second;
 
         std::string response = createResponseMessage(reqId, allowed, reason);
-        if (send(clientSocket, response.c_str(), response.length(), 0) < 0) {
-             writeLog("[Scheduler] 发送响应失败，连接断开。");
-             close(clientSocket);
-             break;
+        
+        // 发送响应到响应队列
+        if (!channel->response_queue.push_blocking(response, 5000)) {
+            writeLog("[Scheduler] 发送响应超时: " + clientName);
         }
+    }
+
+    ss.str("");
+    ss << "[Scheduler] " << clientName << " 通道处理线程退出";
+    writeLog(ss.str());
+    std::cout << ss.str() << std::endl;
+}
+
+// ============================================================
+//  初始化共享内存
+// ============================================================
+
+bool initSharedMemory() {
+    std::cout << "[Scheduler] 正在初始化共享内存..." << std::endl;
+
+    // 创建 PyTorch 通道
+    g_pytorchChannel = SharedMemoryHelper::create_or_open(SHM_NAME_PYTORCH, true);
+    if (!g_pytorchChannel) {
+        std::cerr << "[Scheduler] 创建 PyTorch 共享内存失败" << std::endl;
+        return false;
+    }
+    std::cout << "[Scheduler] PyTorch 共享内存通道已创建: " << SHM_NAME_PYTORCH << std::endl;
+
+    // 创建 SGLang 通道
+    g_sglangChannel = SharedMemoryHelper::create_or_open(SHM_NAME_SGLANG, true);
+    if (!g_sglangChannel) {
+        std::cerr << "[Scheduler] 创建 SGLang 共享内存失败" << std::endl;
+        SharedMemoryHelper::unmap(g_pytorchChannel);
+        SharedMemoryHelper::unlink(SHM_NAME_PYTORCH);
+        return false;
+    }
+    std::cout << "[Scheduler] SGLang 共享内存通道已创建: " << SHM_NAME_SGLANG << std::endl;
+
+    return true;
+}
+
+// ============================================================
+//  清理共享内存
+// ============================================================
+
+void cleanupSharedMemory() {
+    std::cout << "[Scheduler] 正在清理共享内存..." << std::endl;
+
+    if (g_pytorchChannel) {
+        g_pytorchChannel->scheduler_ready.store(false, std::memory_order_release);
+        SharedMemoryHelper::unmap(g_pytorchChannel);
+        SharedMemoryHelper::unlink(SHM_NAME_PYTORCH);
+        g_pytorchChannel = nullptr;
+        std::cout << "[Scheduler] PyTorch 共享内存已清理" << std::endl;
+    }
+
+    if (g_sglangChannel) {
+        g_sglangChannel->scheduler_ready.store(false, std::memory_order_release);
+        SharedMemoryHelper::unmap(g_sglangChannel);
+        SharedMemoryHelper::unlink(SHM_NAME_SGLANG);
+        g_sglangChannel = nullptr;
+        std::cout << "[Scheduler] SGLang 共享内存已清理" << std::endl;
     }
 }
 
+// ============================================================
+//  主函数
+// ============================================================
+
 int main() {
+    // 注册信号处理
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+
     mkdir("logs", 0777);
 
-    int server_fd;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
-
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
+    // 初始化共享内存
+    if (!initSharedMemory()) {
+        std::cerr << "[Scheduler] 共享内存初始化失败，退出" << std::endl;
+        return EXIT_FAILURE;
     }
 
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(SCHEDULER_PORT);
-
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
-
-    if (listen(server_fd, 10) < 0) {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "[Scheduler] 服务端运行中 (Port " << SCHEDULER_PORT << ")... " << std::endl;
-
-    while (true) {
-        int new_socket;
-        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("accept");
-            continue;
-        }
-        
-        {
-            // 在检查是否需要轮转日志前，必须持有 logMutex。
-            // 这样可以确保在轮转（写入统计、关闭旧文件）的过程中，
-            // 没有任何工作线程能通过 writeLog 写入日志，避免数据竞态或写入已关闭的文件。
-            std::lock_guard<std::mutex> lock(logMutex);
-            
-            if (connectionCount % 2 == 0) {
-                rotateLogFile();
-            }
-            connectionCount++;
-        }
-
-        std::thread clientThread(serviceClient, new_socket);
-        clientThread.detach(); 
-    }
-
-    // 程序正常退出前的清理
-    if(globalLogFile.is_open()) {
+    // 创建初始日志文件
+    {
         std::lock_guard<std::mutex> lock(logMutex);
-        flushStatsAndReset();
-        globalLogFile.close();
+        rotateLogFile();
     }
-    
-    close(server_fd);
+
+    std::cout << "[Scheduler] 服务端运行中 (使用 SHM SPSC 通信)..." << std::endl;
+    std::cout << "[Scheduler] PyTorch 通道: " << SHM_NAME_PYTORCH << std::endl;
+    std::cout << "[Scheduler] SGLang 通道: " << SHM_NAME_SGLANG << std::endl;
+
+    // 启动客户端处理线程
+    std::thread pytorchThread(serviceClientChannel, g_pytorchChannel, "PyTorch");
+    std::thread sglangThread(serviceClientChannel, g_sglangChannel, "SGLang");
+
+    // 主线程等待退出信号
+    while (g_running.load(std::memory_order_acquire)) {
+        sleep(1);
+        
+        // 定期轮转日志（每分钟）
+        static auto lastRotate = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::minutes>(now - lastRotate).count() >= 1) {
+            std::lock_guard<std::mutex> lock(logMutex);
+            rotateLogFile();
+            lastRotate = now;
+        }
+    }
+
+    std::cout << "[Scheduler] 正在等待工作线程退出..." << std::endl;
+
+    // 等待线程退出
+    if (pytorchThread.joinable()) pytorchThread.join();
+    if (sglangThread.joinable()) sglangThread.join();
+
+    // 写入最终统计并关闭日志
+    {
+        std::lock_guard<std::mutex> lock(logMutex);
+        if (globalLogFile.is_open()) {
+            flushStatsAndReset();
+            globalLogFile.close();
+        }
+    }
+
+    // 清理共享内存
+    cleanupSharedMemory();
+
+    std::cout << "[Scheduler] 已安全退出" << std::endl;
     return 0;
 }
