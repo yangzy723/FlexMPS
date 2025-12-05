@@ -102,7 +102,7 @@ g++ scheduler.cpp -o scheduler
 ./scheduler
 
 # New Terminal, Prefill Node
-export UNIQUE_ID = 1
+export UNIQUE_ID=1
 python -m sglang.launch_server \
    --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ \
    --port 30001 \
@@ -110,7 +110,7 @@ python -m sglang.launch_server \
    --mem-fraction-static 0.4
 
 # New Terminal, Decode Node
-export UNIQUE_ID = 2
+export UNIQUE_ID=2
 python -m sglang.launch_server \
    --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ \
    --port 30002 \
@@ -118,7 +118,8 @@ python -m sglang.launch_server \
    --mem-fraction-static 0.4
 
 # 启动压力测试程序
-python stress.py
+cd pd-test
+bash run.sh
 ```
 
 ## Tips

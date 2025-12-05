@@ -1,5 +1,5 @@
 scheduler
 result.jsonl
 logs/
-
+*.json
 *.nsys-rep
