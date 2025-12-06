@@ -118,7 +118,7 @@ python -m sglang.launch_server \
    --mem-fraction-static 0.4
 
 # 启动压力测试程序
-cd pd-test
+cd test-pd
 bash run.sh
 ```
 
