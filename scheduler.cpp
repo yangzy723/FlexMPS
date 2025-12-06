@@ -172,21 +172,21 @@ void serviceClientChannel(ClientChannel* channel, const std::string& clientName)
                 break;
             }
             // 忙等待：前 1000 次快速轮询，然后逐渐增加延迟
-            if (spin_count < 1000) {
-                // CPU pause hint，减少功耗
-                __asm__ __volatile__("pause" ::: "memory");
-                spin_count++;
-            } else if (spin_count < 10000) {
-                // 每 100 次检查一次
-                if (spin_count % 100 == 0) {
-                    usleep(1);  // 1 微秒
-                }
-                spin_count++;
-            } else {
-                // 长时间等待，使用更长的休眠
-                usleep(10);  // 10 微秒
-                spin_count = 0;  // 重置计数器
-            }
+            // if (spin_count < 1000) {
+            //     // CPU pause hint，减少功耗
+            //     __asm__ __volatile__("pause" ::: "memory");
+            //     spin_count++;
+            // } else if (spin_count < 10000) {
+            //     // 每 100 次检查一次
+            //     if (spin_count % 100 == 0) {
+            //         usleep(1);  // 1 微秒
+            //     }
+            //     spin_count++;
+            // } else {
+            //     // 长时间等待，使用更长的休眠
+            //     usleep(10);  // 10 微秒
+            //     spin_count = 0;  // 重置计数器
+            // }
         }
         
         if (!g_running.load(std::memory_order_acquire)) {
