@@ -15,6 +15,10 @@
 #include <map>
 #include <algorithm>
 #include <csignal>
+#include <memory>
+#include <cstdlib>  // for atoi
+#include <cerrno>   // for errno
+#include <sys/types.h>  // for pid_t
 
 #include "IPCProtocol.h"
 
@@ -24,18 +28,50 @@
 
 std::mutex logMutex;           
 std::ofstream globalLogFile;   
-long long connectionCount = 0; 
+std::atomic<long long> connectionCount(0);  // 连接/会话计数（兼容socket版本）
 
 std::atomic<long long> globalKernelId(0);
 std::mutex statsMutex;
 std::map<std::string, long long> currentLogKernelStats;
+std::map<std::string, long long> currentLogConnectionStats;  // 每个客户端的连接统计
 
 // 运行控制标志
 std::atomic<bool> g_running(true);
 
-// 共享内存通道
-ClientChannel* g_pytorchChannel = nullptr;
-ClientChannel* g_sglangChannel = nullptr;
+// 注册表共享内存
+ClientRegistry* g_registry = nullptr;
+
+// ============================================================
+//  动态客户端管理
+// ============================================================
+
+struct ActiveClient {
+    int registrySlot;                      // 在注册表中的槽位
+    std::string shmName;                   // 共享内存名称
+    std::string clientType;                // 客户端类型
+    std::string uniqueId;                  // 唯一标识
+    pid_t clientPid;                       // 客户端进程 PID（用于检测进程存活）
+    ClientChannel* channel;                // 通道指针
+    std::thread serviceThread;             // 服务线程
+    std::atomic<bool> running;             // 服务线程运行标志
+    std::atomic<uint64_t> lastActivityTime; // 最后活动时间（毫秒）
+    
+    ActiveClient() : registrySlot(-1), clientPid(0), channel(nullptr), running(false), lastActivityTime(0) {}
+    ~ActiveClient() {
+        running.store(false, std::memory_order_release);
+        if (serviceThread.joinable()) {
+            serviceThread.join();
+        }
+        if (channel) {
+            channel->scheduler_ready.store(false, std::memory_order_release);
+            SharedMemoryHelper::unmap(channel);
+            channel = nullptr;
+        }
+    }
+};
+
+std::mutex clientsMutex;
+std::map<int, std::unique_ptr<ActiveClient>> g_activeClients;  // slot -> ActiveClient
 
 // ============================================================
 //  信号处理
@@ -55,6 +91,19 @@ void flushStatsAndReset() {
     std::lock_guard<std::mutex> lock(statsMutex); // 锁住统计数据
 
     if (!globalLogFile.is_open()) return;
+
+    globalLogFile << "\n-------------------------------------------------------\n";
+    globalLogFile << "      Session Statistics (Compatible with Socket)\n";
+    globalLogFile << "-------------------------------------------------------\n";
+    globalLogFile << "Total Connections/Sessions: " << connectionCount.load() << "\n";
+
+    // 输出每个客户端的连接统计
+    if (!currentLogConnectionStats.empty()) {
+        globalLogFile << "\nConnections by Client:\n";
+        for (const auto& item : currentLogConnectionStats) {
+            globalLogFile << "  " << item.first << ": " << item.second << " session(s)\n";
+        }
+    }
 
     globalLogFile << "\n-------------------------------------------------------\n";
     globalLogFile << "      Kernel Statistics for this Log File\n";
@@ -87,6 +136,7 @@ void flushStatsAndReset() {
     globalLogFile.flush();
 
     currentLogKernelStats.clear();
+    currentLogConnectionStats.clear();
 }
 
 std::string getCurrentTimeStrForFile() {
@@ -153,45 +203,64 @@ std::pair<bool, std::string> makeDecision(const std::string& kernelType) {
 //  处理单个客户端通道的线程函数
 // ============================================================
 
-void serviceClientChannel(ClientChannel* channel, const std::string& clientName) {
+void serviceClientChannel(ActiveClient* client) {
     std::stringstream ss;
-    ss << "[Scheduler] 开始监听 " << clientName << " 通道";
+    
+    // 记录连接/会话开始（兼容socket版本的连接计数逻辑）
+    long long sessionId = connectionCount.fetch_add(1, std::memory_order_relaxed) + 1;
+    {
+        std::lock_guard<std::mutex> lock(statsMutex);
+        currentLogConnectionStats[client->clientType + ":" + client->uniqueId]++;
+    }
+    
+    ss << "[Scheduler] 会话 #" << sessionId << " 开始服务 " 
+       << client->clientType << " 客户端 (ID: " << client->uniqueId 
+       << ", SHM: " << client->shmName << ")";
     writeLog(ss.str());
     std::cout << ss.str() << std::endl;
 
-    // 标记调度器已准备好
-    channel->scheduler_ready.store(true, std::memory_order_release);
+    // 标记调度器已准备好服务此通道
+    client->channel->scheduler_ready.store(true, std::memory_order_release);
+
+    // 初始化活动时间
+    auto getCurrentTimeMs = []() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()
+        ).count();
+    };
+    client->lastActivityTime.store(getCurrentTimeMs(), std::memory_order_release);
 
     char buffer[SPSC_MSG_SIZE];
+    int spin_count = 0;
 
-    while (g_running.load(std::memory_order_acquire)) {
-        // 非阻塞尝试读取请求，使用忙等待+退避策略
-        int spin_count = 0;
-        while (!channel->request_queue.try_pop(buffer, SPSC_MSG_SIZE)) {
-            if (!g_running.load(std::memory_order_acquire)) {
-                break;
-            }
-            // 忙等待：前 1000 次快速轮询，然后逐渐增加延迟
-            // if (spin_count < 1000) {
-            //     // CPU pause hint，减少功耗
-            //     __asm__ __volatile__("pause" ::: "memory");
-            //     spin_count++;
-            // } else if (spin_count < 10000) {
-            //     // 每 100 次检查一次
-            //     if (spin_count % 100 == 0) {
-            //         usleep(1);  // 1 微秒
-            //     }
-            //     spin_count++;
-            // } else {
-            //     // 长时间等待，使用更长的休眠
-            //     usleep(10);  // 10 微秒
-            //     spin_count = 0;  // 重置计数器
-            // }
-        }
+    while (g_running.load(std::memory_order_acquire) && 
+           client->running.load(std::memory_order_acquire)) {
         
-        if (!g_running.load(std::memory_order_acquire)) {
-            break;
+        // 忙等待读取请求（极低延迟模式）
+        while (!client->channel->request_queue.try_pop(buffer, SPSC_MSG_SIZE)) {
+            if (!g_running.load(std::memory_order_acquire) ||
+                !client->running.load(std::memory_order_acquire)) {
+                goto exit_loop;
+            }
+            
+            // 每 10000 次循环检查一次客户端连接状态
+            if (++spin_count >= 10000) {
+                spin_count = 0;
+                if (!client->channel->client_connected.load(std::memory_order_acquire)) {
+                    ss.str("");
+                    ss << "[Scheduler] 客户端已断开连接: " << client->shmName;
+                    writeLog(ss.str());
+                    std::cout << ss.str() << std::endl;
+                    goto exit_loop;
+                }
+            }
+            
+            // CPU pause hint，减少功耗和总线争用
+            __asm__ __volatile__("pause" ::: "memory");
         }
+
+        // 更新最后活动时间
+        client->lastActivityTime.store(getCurrentTimeMs(), std::memory_order_release);
 
         // 直接处理 buffer，避免不必要的字符串拷贝
         size_t msg_len = strlen(buffer);
@@ -211,7 +280,7 @@ void serviceClientChannel(ClientChannel* channel, const std::string& clientName)
         std::string kernelType = parts[0];     
         std::string reqId = parts[1];        
         std::string source = parts[2];
-        std::string uniqueId = (parts.size() >= 4) ? parts[3] : "";  // 兼容旧协议（可能没有 unique_id）       
+        std::string uniqueId = (parts.size() >= 4) ? parts[3] : "";
 
         long long currentId = ++globalKernelId;
 
@@ -220,7 +289,8 @@ void serviceClientChannel(ClientChannel* channel, const std::string& clientName)
         // 减少日志写入频率：每 100 个内核记录一次，或关键事件
         if (currentId % 100 == 0 || currentId <= 10) {
             ss.str("");
-            ss << "Kernel " << currentId << " arrived: " << kernelType << "|" << reqId << " from " << source;
+            ss << "Kernel " << currentId << " arrived: " << kernelType << "|" << reqId 
+               << " from " << source;
             if (!uniqueId.empty()) {
                 ss << " (UNIQUE_ID: " << uniqueId << ")";
             }
@@ -234,15 +304,178 @@ void serviceClientChannel(ClientChannel* channel, const std::string& clientName)
         std::string response = createResponseMessage(reqId, allowed, reason);
         
         // 发送响应到响应队列
-        if (!channel->response_queue.push_blocking(response, 5000)) {
-            writeLog("[Scheduler] 发送响应超时: " + clientName);
+        if (!client->channel->response_queue.push_blocking(response, 5000)) {
+            writeLog("[Scheduler] 发送响应超时: " + client->shmName);
         }
     }
 
+exit_loop:
     ss.str("");
-    ss << "[Scheduler] " << clientName << " 通道处理线程退出";
+    ss << "[Scheduler] 会话 #" << sessionId << " " << client->clientType 
+       << " 客户端服务线程退出 (ID: " << client->uniqueId << ")";
     writeLog(ss.str());
     std::cout << ss.str() << std::endl;
+}
+
+// ============================================================
+//  发现并服务新客户端
+// ============================================================
+
+void discoverAndServiceNewClient(int slot) {
+    if (!g_registry) return;
+    
+    ClientRegistryEntry& entry = g_registry->entries[slot];
+    
+    // 获取客户端信息（在锁外读取，因为只有客户端会写入这些字段）
+    std::string shmName(entry.shm_name);
+    std::string clientType(entry.client_type);
+    std::string uniqueId(entry.unique_id);
+    pid_t clientPid = static_cast<pid_t>(entry.client_pid.load(std::memory_order_acquire));
+    
+    // 使用锁保护整个检查和创建过程，防止竞态条件
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    
+    // 检查是否已经在服务此 slot
+    if (g_activeClients.find(slot) != g_activeClients.end()) {
+        return;  // 已经在服务
+    }
+    
+    // 检查是否已经有其他线程在服务相同的共享内存通道（防止重复服务同一个 shmName）
+    for (const auto& pair : g_activeClients) {
+        if (pair.second && pair.second->shmName == shmName) {
+            return;  // 已经有线程在服务此共享内存
+        }
+    }
+    
+    std::cout << "[Scheduler] 发现新客户端: " << clientType << " (ID: " << uniqueId 
+              << ", PID: " << clientPid << ", SHM: " << shmName << ")" << std::endl;
+    
+    // 打开客户端的共享内存通道
+    ClientChannel* channel = SharedMemoryHelper::create_or_open(shmName.c_str(), false);
+    if (!channel) {
+        std::cerr << "[Scheduler] 无法打开客户端共享内存: " << shmName << std::endl;
+        return;
+    }
+    
+    // 创建 ActiveClient (使用 C++11 兼容写法)
+    std::unique_ptr<ActiveClient> client(new ActiveClient());
+    client->registrySlot = slot;
+    client->shmName = shmName;
+    client->clientType = clientType;
+    client->uniqueId = uniqueId;
+    client->clientPid = clientPid;
+    client->channel = channel;
+    client->running.store(true, std::memory_order_release);
+    
+    // 先加入活跃客户端列表（防止其他线程重复创建）
+    ActiveClient* clientPtr = client.get();
+    g_activeClients[slot] = std::move(client);
+    
+    // 启动服务线程（线程会立即开始运行，但此时已经在 map 中了）
+    g_activeClients[slot]->serviceThread = std::thread(serviceClientChannel, clientPtr);
+}
+
+// ============================================================
+//  清理断开连接的客户端
+// ============================================================
+
+// 检测进程是否存在
+static bool isProcessAlive(pid_t pid) {
+    if (pid <= 0) return true;  // 无法确定，假设存活
+    // kill(pid, 0) 不发送信号，只检测进程是否存在
+    return (kill(pid, 0) == 0 || errno == EPERM);
+}
+
+void cleanupDisconnectedClients() {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    
+    std::vector<int> toRemove;
+    
+    for (auto& pair : g_activeClients) {
+        int slot = pair.first;
+        ActiveClient* client = pair.second.get();
+        
+        // 检查客户端是否仍然活跃（在注册表中）
+        bool stillActive = false;
+        if (g_registry && slot < static_cast<int>(MAX_REGISTERED_CLIENTS)) {
+            stillActive = g_registry->entries[slot].active.load(std::memory_order_acquire);
+        }
+        
+        // 检查客户端连接状态
+        bool stillConnected = client->channel && 
+                              client->channel->client_connected.load(std::memory_order_acquire);
+        
+        // 检查客户端进程是否仍然存活（最可靠的检测方式）
+        bool processAlive = isProcessAlive(client->clientPid);
+        
+        if (!stillActive || !stillConnected || !processAlive) {
+            if (!processAlive) {
+                std::cout << "[Scheduler] 检测到客户端进程已终止 (PID: " << client->clientPid 
+                          << "): " << client->shmName << std::endl;
+            } else {
+                std::cout << "[Scheduler] 清理断开的客户端: " << client->shmName << std::endl;
+            }
+            client->running.store(false, std::memory_order_release);
+            toRemove.push_back(slot);
+        }
+    }
+    
+    // 移除断开的客户端
+    for (int slot : toRemove) {
+        auto it = g_activeClients.find(slot);
+        if (it != g_activeClients.end()) {
+            ActiveClient* client = it->second.get();
+            
+            // 清理注册表条目（如果客户端没有正常注销）
+            if (g_registry && slot < static_cast<int>(MAX_REGISTERED_CLIENTS)) {
+                g_registry->entries[slot].active.store(false, std::memory_order_release);
+            }
+            
+            // 尝试删除共享内存文件（客户端可能没来得及清理）
+            if (!client->shmName.empty()) {
+                SharedMemoryHelper::unlink(client->shmName.c_str());
+            }
+            
+            g_activeClients.erase(it);
+        }
+    }
+}
+
+// ============================================================
+//  注册表扫描线程
+// ============================================================
+
+void registryScannerThread() {
+    std::cout << "[Scheduler] 注册表扫描线程已启动" << std::endl;
+    
+    uint32_t lastVersion = 0;
+    
+    while (g_running.load(std::memory_order_acquire)) {
+        if (!g_registry) {
+            usleep(100000);  // 100ms
+            continue;
+        }
+        
+        // 检查版本号是否变化
+        uint32_t currentVersion = g_registry->version.load(std::memory_order_acquire);
+        
+        if (currentVersion != lastVersion) {
+            // 有变化，扫描注册表
+            for (size_t i = 0; i < MAX_REGISTERED_CLIENTS; i++) {
+                if (g_registry->entries[i].active.load(std::memory_order_acquire)) {
+                    discoverAndServiceNewClient(static_cast<int>(i));
+                }
+            }
+            lastVersion = currentVersion;
+        }
+        
+        // 定期清理断开连接的客户端
+        cleanupDisconnectedClients();
+        
+        usleep(100000);  // 100ms 扫描间隔
+    }
+    
+    std::cout << "[Scheduler] 注册表扫描线程已退出" << std::endl;
 }
 
 // ============================================================
@@ -252,23 +485,16 @@ void serviceClientChannel(ClientChannel* channel, const std::string& clientName)
 bool initSharedMemory() {
     std::cout << "[Scheduler] 正在初始化共享内存..." << std::endl;
 
-    // 创建 PyTorch 通道
-    g_pytorchChannel = SharedMemoryHelper::create_or_open(SHM_NAME_PYTORCH, true);
-    if (!g_pytorchChannel) {
-        std::cerr << "[Scheduler] 创建 PyTorch 共享内存失败" << std::endl;
+    // 创建注册表共享内存
+    g_registry = SharedMemoryHelper::create_or_open_registry(true);
+    if (!g_registry) {
+        std::cerr << "[Scheduler] 创建注册表共享内存失败" << std::endl;
         return false;
     }
-    std::cout << "[Scheduler] PyTorch 共享内存通道已创建: " << SHM_NAME_PYTORCH << std::endl;
+    std::cout << "[Scheduler] 注册表共享内存已创建: " << SHM_NAME_REGISTRY << std::endl;
 
-    // 创建 SGLang 通道
-    g_sglangChannel = SharedMemoryHelper::create_or_open(SHM_NAME_SGLANG, true);
-    if (!g_sglangChannel) {
-        std::cerr << "[Scheduler] 创建 SGLang 共享内存失败" << std::endl;
-        SharedMemoryHelper::unmap(g_pytorchChannel);
-        SharedMemoryHelper::unlink(SHM_NAME_PYTORCH);
-        return false;
-    }
-    std::cout << "[Scheduler] SGLang 共享内存通道已创建: " << SHM_NAME_SGLANG << std::endl;
+    // 标记调度器已准备好（客户端可以开始注册）
+    g_registry->scheduler_ready.store(true, std::memory_order_release);
 
     return true;
 }
@@ -280,20 +506,22 @@ bool initSharedMemory() {
 void cleanupSharedMemory() {
     std::cout << "[Scheduler] 正在清理共享内存..." << std::endl;
 
-    if (g_pytorchChannel) {
-        g_pytorchChannel->scheduler_ready.store(false, std::memory_order_release);
-        SharedMemoryHelper::unmap(g_pytorchChannel);
-        SharedMemoryHelper::unlink(SHM_NAME_PYTORCH);
-        g_pytorchChannel = nullptr;
-        std::cout << "[Scheduler] PyTorch 共享内存已清理" << std::endl;
+    // 先清理所有活跃客户端
+    {
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        for (auto& pair : g_activeClients) {
+            pair.second->running.store(false, std::memory_order_release);
+        }
+        g_activeClients.clear();
     }
 
-    if (g_sglangChannel) {
-        g_sglangChannel->scheduler_ready.store(false, std::memory_order_release);
-        SharedMemoryHelper::unmap(g_sglangChannel);
-        SharedMemoryHelper::unlink(SHM_NAME_SGLANG);
-        g_sglangChannel = nullptr;
-        std::cout << "[Scheduler] SGLang 共享内存已清理" << std::endl;
+    // 清理注册表
+    if (g_registry) {
+        g_registry->scheduler_ready.store(false, std::memory_order_release);
+        SharedMemoryHelper::unmap_registry(g_registry);
+        SharedMemoryHelper::unlink_registry();
+        g_registry = nullptr;
+        std::cout << "[Scheduler] 注册表共享内存已清理" << std::endl;
     }
 }
 
@@ -320,13 +548,12 @@ int main() {
         rotateLogFile();
     }
 
-    std::cout << "[Scheduler] 服务端运行中 (使用 SHM SPSC 通信)..." << std::endl;
-    std::cout << "[Scheduler] PyTorch 通道: " << SHM_NAME_PYTORCH << std::endl;
-    std::cout << "[Scheduler] SGLang 通道: " << SHM_NAME_SGLANG << std::endl;
+    std::cout << "[Scheduler] 服务端运行中 (动态多客户端模式)..." << std::endl;
+    std::cout << "[Scheduler] 注册表: " << SHM_NAME_REGISTRY << std::endl;
+    std::cout << "[Scheduler] 等待客户端注册..." << std::endl;
 
-    // 启动客户端处理线程
-    std::thread pytorchThread(serviceClientChannel, g_pytorchChannel, "PyTorch");
-    std::thread sglangThread(serviceClientChannel, g_sglangChannel, "SGLang");
+    // 启动注册表扫描线程
+    std::thread scannerThread(registryScannerThread);
 
     // 主线程等待退出信号
     while (g_running.load(std::memory_order_acquire)) {
@@ -340,13 +567,22 @@ int main() {
             rotateLogFile();
             lastRotate = now;
         }
+        
+        // 打印当前活跃客户端数量
+        static auto lastStatus = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - lastStatus).count() >= 10) {
+            std::lock_guard<std::mutex> lock(clientsMutex);
+            std::cout << "[Scheduler] 当前活跃客户端数: " << g_activeClients.size() << std::endl;
+            lastStatus = now;
+        }
     }
 
     std::cout << "[Scheduler] 正在等待工作线程退出..." << std::endl;
 
-    // 等待线程退出
-    if (pytorchThread.joinable()) pytorchThread.join();
-    if (sglangThread.joinable()) sglangThread.join();
+    // 等待扫描线程退出
+    if (scannerThread.joinable()) {
+        scannerThread.join();
+    }
 
     // 写入最终统计并关闭日志
     {

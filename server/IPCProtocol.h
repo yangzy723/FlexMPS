@@ -23,9 +23,17 @@ constexpr size_t SPSC_QUEUE_SIZE = 1024;        // 队列可存储的消息数�
 constexpr size_t SPSC_MSG_SIZE = 256;           // 每条消息的最大字节数
 constexpr size_t CACHE_LINE_SIZE = 64;          // CPU 缓存行大小，用于避免伪共享
 
-// 共享内存名称
+// 共享内存名称前缀（支持多客户端动态通道）
+#define SHM_NAME_PREFIX_PYTORCH "/ks_pytorch_"
+#define SHM_NAME_PREFIX_SGLANG  "/ks_sglang_"
+
+// 保留旧名称用于兼容（单客户端模式）
 #define SHM_NAME_PYTORCH "/kernel_scheduler_pytorch"
 #define SHM_NAME_SGLANG  "/kernel_scheduler_sglang"
+
+// 注册通道（客户端在此注册自己的通道名）
+#define SHM_NAME_REGISTRY "/kernel_scheduler_registry"
+constexpr size_t MAX_REGISTERED_CLIENTS = 64;  // 最多支持的客户端数量
 
 // ============================================================
 //  消息构建函数（保持兼容）
@@ -219,6 +227,90 @@ struct ClientChannel {
 };
 
 // ============================================================
+//  客户端注册表 - 用于动态多客户端支持
+// ============================================================
+
+/**
+ * ClientRegistryEntry - 单个客户端的注册信息
+ */
+struct ClientRegistryEntry {
+    alignas(CACHE_LINE_SIZE) std::atomic<bool> active;           // 是否活跃
+    char shm_name[64];                                            // 共享内存名称
+    char client_type[16];                                         // 客户端类型：pytorch/sglang
+    char unique_id[64];                                           // 客户端唯一标识（UNIQUE_ID 环境变量）
+    alignas(CACHE_LINE_SIZE) std::atomic<int64_t> client_pid;    // 客户端进程 PID（用于检测进程存活）
+    alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> last_heartbeat; // 最后心跳时间戳
+    
+    void init() {
+        active.store(false, std::memory_order_relaxed);
+        std::memset(shm_name, 0, sizeof(shm_name));
+        std::memset(client_type, 0, sizeof(client_type));
+        std::memset(unique_id, 0, sizeof(unique_id));
+        client_pid.store(0, std::memory_order_relaxed);
+        last_heartbeat.store(0, std::memory_order_relaxed);
+    }
+};
+
+/**
+ * ClientRegistry - 客户端注册表
+ * 
+ * 客户端启动时在此注册自己的通道名，调度器扫描此表发现新客户端
+ */
+struct ClientRegistry {
+    alignas(CACHE_LINE_SIZE) std::atomic<bool> scheduler_ready;  // 调度器是否已准备好
+    alignas(CACHE_LINE_SIZE) std::atomic<uint32_t> version;      // 版本号，每次有变更时递增
+    ClientRegistryEntry entries[MAX_REGISTERED_CLIENTS];
+    
+    void init() {
+        scheduler_ready.store(false, std::memory_order_relaxed);
+        version.store(0, std::memory_order_relaxed);
+        for (size_t i = 0; i < MAX_REGISTERED_CLIENTS; i++) {
+            entries[i].init();
+        }
+    }
+    
+    // 注册新客户端，返回分配的槽位索引，失败返回 -1
+    int register_client(const char* shm_name, const char* client_type, const char* unique_id, int64_t pid = 0) {
+        for (size_t i = 0; i < MAX_REGISTERED_CLIENTS; i++) {
+            bool expected = false;
+            if (entries[i].active.compare_exchange_strong(expected, true, 
+                    std::memory_order_acq_rel, std::memory_order_relaxed)) {
+                // 成功占用此槽位
+                std::strncpy(entries[i].shm_name, shm_name, sizeof(entries[i].shm_name) - 1);
+                std::strncpy(entries[i].client_type, client_type, sizeof(entries[i].client_type) - 1);
+                std::strncpy(entries[i].unique_id, unique_id, sizeof(entries[i].unique_id) - 1);
+                entries[i].client_pid.store(pid, std::memory_order_release);
+                entries[i].last_heartbeat.store(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()
+                    ).count(), std::memory_order_release);
+                version.fetch_add(1, std::memory_order_release);
+                return static_cast<int>(i);
+            }
+        }
+        return -1;  // 没有空闲槽位
+    }
+    
+    // 注销客户端
+    void unregister_client(int slot) {
+        if (slot >= 0 && slot < static_cast<int>(MAX_REGISTERED_CLIENTS)) {
+            entries[slot].active.store(false, std::memory_order_release);
+            version.fetch_add(1, std::memory_order_release);
+        }
+    }
+    
+    // 更新心跳
+    void update_heartbeat(int slot) {
+        if (slot >= 0 && slot < static_cast<int>(MAX_REGISTERED_CLIENTS)) {
+            entries[slot].last_heartbeat.store(
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()
+                ).count(), std::memory_order_release);
+        }
+    }
+};
+
+// ============================================================
 //  共享内存辅助类
 // ============================================================
 
@@ -278,5 +370,56 @@ public:
     // 删除共享内存（仅调度器在退出时使用）
     static void unlink(const char* shm_name) {
         shm_unlink(shm_name);
+    }
+    
+    // 创建或打开注册表共享内存
+    static ClientRegistry* create_or_open_registry(bool create = false) {
+        int flags = O_RDWR;
+        if (create) {
+            flags |= O_CREAT;
+        }
+        
+        int fd = shm_open(SHM_NAME_REGISTRY, flags, 0666);
+        if (fd == -1) {
+            std::cerr << "[SHM] 打开注册表共享内存失败: " << SHM_NAME_REGISTRY << std::endl;
+            return nullptr;
+        }
+
+        if (create) {
+            if (ftruncate(fd, sizeof(ClientRegistry)) == -1) {
+                std::cerr << "[SHM] 设置注册表共享内存大小失败" << std::endl;
+                close(fd);
+                return nullptr;
+            }
+        }
+
+        void* ptr = mmap(nullptr, sizeof(ClientRegistry), 
+                        PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        close(fd);
+
+        if (ptr == MAP_FAILED) {
+            std::cerr << "[SHM] 映射注册表共享内存失败" << std::endl;
+            return nullptr;
+        }
+
+        ClientRegistry* registry = static_cast<ClientRegistry*>(ptr);
+        
+        if (create) {
+            registry->init();
+        }
+
+        return registry;
+    }
+    
+    // 解除注册表映射
+    static void unmap_registry(ClientRegistry* registry) {
+        if (registry) {
+            munmap(registry, sizeof(ClientRegistry));
+        }
+    }
+    
+    // 删除注册表共享内存
+    static void unlink_registry() {
+        shm_unlink(SHM_NAME_REGISTRY);
     }
 };
