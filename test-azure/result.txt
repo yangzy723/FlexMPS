@@ -1,0 +1,215 @@
+SPEEDUP_FACTOR = 1.1
+
+baseline:
+Loading top 200000 rows from trace: AzureLLMInferenceTrace_conv_1week.csv
+Applying sampling: picking 1 request every 2 rows.
+Limiting execution to first 10000 requests (after sampling).
+
+=== Benchmark Config ===
+Sample Interval : Every 2th request
+Speedup Factor  : 1.1x
+Actual Requests : 10000
+Mode            : Streaming
+Starting requests...
+[Progress]: 10000/10000 (100.0%) requests finished.
+All tasks completed in 714.04 seconds.
+
+=============================================
+  RESULTS (Sample: 1/2, Speed: 1.1x)
+=============================================
+Total Successful Requests: 9998
+Benchmark Duration     : 714.04 s
+Total Input Tokens     : 16310063
+Total Output Tokens    : 1153461
+
+[Throughput System-wide]
+  Requests/s      : 14.02 req/s
+  Prefill Tokens/s: 22841.80 tokens/s
+  Decode Tokens/s : 1615.39 tokens/s
+
+[E2E Latency]
+  Avg: 5.7271 s
+  P50: 2.1046 s
+  P90: 18.1507 s
+  P99: 36.7940 s
+
+[TTFT - Time To First Token]
+  Avg: 0.5103 s
+  P50: 0.1583 s
+  P90: 2.0259 s
+  P99: 3.6601 s
+
+[Global TPOT - Inter-Token Latency]
+  Avg: 45.61 ms
+  P50: 18.60 ms
+  P90: 112.12 ms
+  P99: 409.46 ms
+
+pd:
+Loading trace: AzureLLMInferenceTrace_conv_1week.csv
+Applying sampling: picking 1 request every 2 rows.
+Limiting execution to first 10000 requests (after sampling).
+
+
+=== PD Separation Simulation (MPS) ===
+Prefill Node : http://127.0.0.1:30001/v1/completions   (High Input, Output=1)
+Decode Node  : http://127.0.0.1:30002/v1/completions   (Low Input, Output=Trace)
+Speedup      : 1.1x
+Trace Rows   : 10000
+Total Requests: 20000
+Starting requests...
+[Progress]: 20000/20000 (100.0%) requests finished.
+All tasks completed in 711.33 seconds.
+
+==================================================
+      PD SEPARATION SIMULATION RESULTS
+==================================================
+Benchmark Duration     : 711.33 s
+Total Input Tokens     : 16348828
+Total Output Tokens    : 1164456
+
+[System Throughput]
+  Total Requests/s     : 29.06 req/s
+  Total Prefill Tok/s  : 22983.47 tokens/s
+  Total Decode Tok/s   : 1637.01 tokens/s
+
+[Prefill Worker Stats] (Compute Bound)
+  TTFT Avg: 1.2911 s
+  TTFT P50: 0.1452 s
+  TTFT P90: 1.1639 s
+  TTFT P99: 21.7737 s
+
+[Decode Worker Stats] (Memory Bound)
+  Global TPOT Avg: 54.07 ms
+  Global TPOT P50: 7.44 ms
+  Global TPOT P90: 108.41 ms
+  Global TPOT P99: 786.31 ms
+
+
+
+SPEEDUP_FACTOR = 1.0
+
+
+
+=== Benchmark Config ===
+Sample Interval : Every 2th request
+Speedup Factor  : 1x
+Actual Requests : 10000
+Mode            : Streaming
+Starting requests...
+[Progress]: 10000/10000 (100.0%) requests finished.
+All tasks completed in 782.99 seconds.
+
+=============================================
+  RESULTS (Sample: 1/2, Speed: 1x)
+=============================================
+Total Successful Requests: 10000
+Benchmark Duration     : 782.99 s
+Total Input Tokens     : 16310715
+Total Output Tokens    : 1152115
+
+[Throughput System-wide]
+  Requests/s      : 12.77 req/s
+  Prefill Tokens/s: 20831.26 tokens/s
+  Decode Tokens/s : 1471.43 tokens/s
+
+[E2E Latency]
+  Avg: 3.6787 s
+  P50: 1.2222 s
+  P90: 12.0210 s
+  P99: 24.7809 s
+
+[TTFT - Time To First Token]
+  Avg: 0.1473 s
+  P50: 0.1094 s
+  P90: 0.2812 s
+  P99: 0.5108 s
+
+[Global TPOT - Inter-Token Latency]
+  Avg: 30.92 ms
+  P50: 12.15 ms
+  P90: 56.98 ms
+  P99: 270.90 ms
+
+
+
+=== PD Separation Simulation (MPS) ===
+Prefill Node : http://127.0.0.1:30001/v1/completions   (High Input, Output=1)
+Decode Node  : http://127.0.0.1:30002/v1/completions   (Low Input, Output=Trace)
+Speedup      : 1x
+Trace Rows   : 10000
+Total Requests: 20000
+Starting requests...
+[Progress]: 20000/20000 (100.0%) requests finished.
+All tasks completed in 781.86 seconds.
+
+==================================================
+      PD SEPARATION SIMULATION RESULTS
+==================================================
+Benchmark Duration     : 781.86 s
+Total Input Tokens     : 16360715
+Total Output Tokens    : 1170060
+
+[System Throughput]
+  Total Requests/s     : 25.58 req/s
+  Total Prefill Tok/s  : 20925.33 tokens/s
+  Total Decode Tok/s   : 1496.50 tokens/s
+
+[Prefill Worker Stats] (Compute Bound)
+  Requests: 10000
+  TTFT Avg: 0.1482 s
+  TTFT P50: 0.1075 s
+  TTFT P90: 0.2902 s
+  TTFT P99: 0.5307 s
+
+[Decode Worker Stats] (Memory Bound)
+  Requests: 10000
+  Global TPOT Avg: 20.09 ms
+  Global TPOT P50: 6.64 ms
+  Global TPOT P90: 42.34 ms
+  Global TPOT P99: 192.05 ms
+  Total Tokens:    1150060
+
+
+Loading trace: AzureLLMInferenceTrace_conv_1week.csv
+Applying sampling: picking 1 request every 2 rows.
+Limiting execution to first 10000 requests (after sampling).
+
+=== PD Separation Simulation (MPS) ===
+Prefill Node : http://127.0.0.1:30001/v1/completions   (High Input, Output=1)
+Decode Node  : http://127.0.0.1:30002/v1/completions   (Low Input, Output=Trace)
+Speedup      : 1.1x
+Trace Rows   : 10000
+Total Requests: 20000
+Starting requests...
+[Progress]: 20000/20000 (100.0%) requests finished.
+All tasks completed in 711.36 seconds.
+
+==================================================
+      PD SEPARATION SIMULATION RESULTS
+==================================================
+Benchmark Duration     : 711.36 s
+Total Input Tokens     : 16360715
+Total Output Tokens    : 1168083
+
+[System Throughput]
+  Total Requests/s     : 29.22 req/s
+  Total Prefill Tok/s  : 22999.28 tokens/s
+  Total Decode Tok/s   : 1642.05 tokens/s
+
+[Prefill Worker Stats] (Compute Bound)
+  Requests: 10000
+  TTFT Avg: 0.1748 s
+  TTFT P50: 0.1325 s
+  TTFT P90: 0.3428 s
+  TTFT P99: 0.6452 s
+
+[Decode Worker Stats] (Memory Bound)
+  Requests: 10000
+  Global TPOT Avg: 26.42 ms
+  Global TPOT P50: 7.19 ms
+  Global TPOT P90: 60.48 ms
+  Global TPOT P99: 238.18 ms
+  Total Tokens:    1148083
+
+Data saved to result_pd_speed1.1x.csv

@@ -90,7 +90,7 @@ nsys profile \
   --disable-cuda-graph
 ```
 
-## PD Test
+## Prefill-Decode  Test
 ```shell
 # 开启 MPS
 export CUDA_VISIBLE_DEVICES=0

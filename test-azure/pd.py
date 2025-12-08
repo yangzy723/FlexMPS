@@ -1,0 +1,264 @@
+import asyncio
+import aiohttp
+import pandas as pd
+import time
+import secrets
+import random
+import json
+import numpy as np
+import sys
+
+# ================= CONFIGURATION AREA =================
+
+# Address of the two MPS instances
+URL_PREFILL = "http://127.0.0.1:30001/v1/completions" # Prefill Node
+URL_DECODE  = "http://127.0.0.1:30002/v1/completions" # Decode Node
+
+DATASET_PATH = "AzureLLMInferenceTrace_conv_1week.csv"
+MODEL_NAME = "/data/datasets/models-hf/Llama-3.1-8B-Instruct/" 
+READ_LIMIT = 200000   
+
+# --- CONTROL PARAMETERS ---
+SAMPLE_INTERVAL = 2     # Sampling: Pick 1 request every N rows
+SPEEDUP_FACTOR = 1.1    # Time Compression: >1.0 speeds up, <1.0 slows down
+
+MAX_REQUESTS = 10000     # Total trace rows to process
+
+# ===================================================
+
+VOCAB = [
+    "the", "be", "to", "of", "and", "a", "in", "that", "have", "I",
+    "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+    "this", "but", "his", "by", "from", "they", "we", "say", "her", "she",
+    "or", "an", "will", "my", "one", "all", "would", "there", "their", "what",
+    "system", "model", "inference", "performance", "latency", "throughput", "gpu",
+    "compute", "memory", "cache", "token", "context", "decode", "prefill", "batch",
+    "queue", "request", "server", "client", "python", "async", "await", "test"
+]
+
+def get_random_prompt_words(token_count):
+    prefix = f"REQ_{secrets.token_hex(3)}: "
+    num_words = int(token_count)
+    if num_words <= 0: return prefix
+    selected_words = random.choices(VOCAB, k=num_words)
+    return prefix + " ".join(selected_words)
+
+async def send_request(session, row, start_timestamp_ref, results_list, role):
+    # role: "prefill_worker" or "decode_worker"
+    
+    target_time_offset = row['relative_timestamp'] / SPEEDUP_FACTOR
+
+    # === Differentiate Input/Output ===
+    if role == "prefill_worker":
+        target_url = URL_PREFILL
+        # Prefill Worker: Compute Bound
+        prompt_text = get_random_prompt_words(row['ContextTokens'])
+        req_max_tokens = 1
+        recorded_input_len = int(row['ContextTokens'])
+    else:
+        target_url = URL_DECODE
+        # Decode Worker: Memory Bound
+        prompt_text = get_random_prompt_words(5)
+        req_max_tokens = int(row['GeneratedTokens'])
+        recorded_input_len = 5
+
+    payload = {
+        "model": MODEL_NAME,
+        "prompt": prompt_text,
+        "max_tokens": req_max_tokens,
+        "temperature": 0, 
+        "ignore_eos": True,
+        "stream": True 
+    }
+
+    # Wait for launch
+    now_offset = time.time() - start_timestamp_ref
+    wait_seconds = target_time_offset - now_offset
+    if wait_seconds > 0:
+        await asyncio.sleep(wait_seconds)
+
+    req_start = time.time()
+    ttft = 0.0
+    first_token_time = 0.0
+    last_token_time = 0.0
+    token_count = 0
+    token_intervals = []
+
+    try:
+        async with session.post(target_url, json=payload) as response:
+            if response.status != 200:
+                await response.read()
+                return
+
+            async for line in response.content:
+                line = line.decode('utf-8').strip()
+                if not line or line == 'data: [DONE]': continue
+                
+                if line.startswith('data: '):
+                    try:
+                        chunk_json = json.loads(line[6:]) 
+                        choices = chunk_json.get("choices", [])
+                        if not choices: continue
+                        delta_content = choices[0].get("text", "")
+                        
+                        if delta_content:
+                            current_time = time.time()
+                            token_count += 1
+                            
+                            if first_token_time == 0.0:
+                                first_token_time = current_time
+                                last_token_time = current_time
+                                ttft = first_token_time - req_start
+                            else:
+                                interval = current_time - last_token_time
+                                token_intervals.append(interval)
+                                last_token_time = current_time
+                    except:
+                        continue
+
+            req_end = time.time()
+            total_latency = req_end - req_start
+            
+            results_list.append({
+                "role": role,
+                "input_len": recorded_input_len,
+                "output_len": token_count, 
+                "ttft": ttft,
+                "token_intervals": token_intervals,
+                "status": response.status
+            })
+
+    except Exception as e:
+        pass
+
+async def main():
+    print(f"Loading trace: {DATASET_PATH}")
+    df = pd.read_csv(DATASET_PATH, nrows=READ_LIMIT)
+    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], format='mixed')
+    df = df.sort_values('TIMESTAMP')
+    
+    if SAMPLE_INTERVAL > 1:
+        print(f"Applying sampling: picking 1 request every {SAMPLE_INTERVAL} rows.")
+        df = df.iloc[::SAMPLE_INTERVAL].copy()
+    
+    if MAX_REQUESTS and MAX_REQUESTS < len(df): 
+        print(f"Limiting execution to first {MAX_REQUESTS} requests (after sampling).")
+        df = df.head(MAX_REQUESTS)
+    
+    start_time_base = df['TIMESTAMP'].iloc[0]
+    df['relative_timestamp'] = (df['TIMESTAMP'] - start_time_base).dt.total_seconds()
+
+    total_trace_rows = len(df)
+    total_http_requests = total_trace_rows * 2 
+
+    print(f"\n=== PD Separation Simulation (MPS) ===")
+    print(f"Prefill Node : {URL_PREFILL}   (High Input, Output=1)")
+    print(f"Decode Node  : {URL_DECODE}   (Low Input, Output=Trace)")
+    print(f"Speedup      : {SPEEDUP_FACTOR}x")
+    print(f"Trace Rows   : {total_trace_rows}")
+    print(f"Total Requests: {total_http_requests}")
+    
+    results = []
+    connector = aiohttp.TCPConnector(limit=4000) 
+    
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = []
+        
+        benchmark_start_time = time.time()
+        print("Starting requests...")
+        
+        for _, row in df.iterrows():
+            tasks.append(asyncio.create_task(
+                send_request(session, row, benchmark_start_time, results, "prefill_worker")
+            ))
+            tasks.append(asyncio.create_task(
+                send_request(session, row, benchmark_start_time, results, "decode_worker")
+            ))
+        
+        completed_count = 0
+        for future in asyncio.as_completed(tasks):
+            await future
+            completed_count += 1
+            if completed_count % 10 == 0 or completed_count == total_http_requests:
+                percent = (completed_count / total_http_requests) * 100
+                sys.stdout.write(f"\r[Progress]: {completed_count}/{total_http_requests} ({percent:.1f}%) requests finished.")
+                sys.stdout.flush()
+        
+        benchmark_end_time = time.time()
+        benchmark_duration = benchmark_end_time - benchmark_start_time
+        print(f"\nAll tasks completed in {benchmark_duration:.2f} seconds.")
+
+    # --- Statistics ---
+    res_df = pd.DataFrame(results)
+    if res_df.empty:
+        print("No results.")
+        return
+
+    print("\n" + "="*50)
+    print("      PD SEPARATION SIMULATION RESULTS")
+    print("="*50)
+    
+    # System-wide Throughput
+    total_system_input = res_df['input_len'].sum()
+    total_system_output = res_df['output_len'].sum()
+    total_successful_reqs = len(res_df[res_df['status'] == 200])
+
+    sys_rps = total_successful_reqs / benchmark_duration
+    sys_prefill_tps = total_system_input / benchmark_duration
+    sys_decode_tps = total_system_output / benchmark_duration
+
+    print(f"Benchmark Duration     : {benchmark_duration:.2f} s")
+    print(f"Total Input Tokens     : {total_system_input}")
+    print(f"Total Output Tokens    : {total_system_output}")
+    print(f"\n[System Throughput]")
+    print(f"  Total Requests/s     : {sys_rps:.2f} req/s")
+    print(f"  Total Prefill Tok/s  : {sys_prefill_tps:.2f} tokens/s")
+    print(f"  Total Decode Tok/s   : {sys_decode_tps:.2f} tokens/s")
+
+    # 1. Prefill Worker
+    prefill_df = res_df[res_df['role'] == 'prefill_worker']
+    if not prefill_df.empty:
+        ttft_avg = prefill_df['ttft'].mean()
+        ttft_p50 = prefill_df['ttft'].quantile(0.50)
+        ttft_p90 = prefill_df['ttft'].quantile(0.90)
+        ttft_p99 = prefill_df['ttft'].quantile(0.99)
+
+        print(f"\n[Prefill Worker Stats] (Compute Bound)")
+        print(f"  Requests: {len(prefill_df)}")
+        print(f"  TTFT Avg: {ttft_avg:.4f} s")
+        print(f"  TTFT P50: {ttft_p50:.4f} s")
+        print(f"  TTFT P90: {ttft_p90:.4f} s")
+        print(f"  TTFT P99: {ttft_p99:.4f} s")
+    
+    # 2. Decode Worker
+    decode_df = res_df[res_df['role'] == 'decode_worker']
+    if not decode_df.empty:
+        all_intervals = []
+        for intervals in decode_df['token_intervals']:
+            all_intervals.extend(intervals)
+        
+        print(f"\n[Decode Worker Stats] (Memory Bound)")
+        print(f"  Requests: {len(decode_df)}")
+        
+        if all_intervals:
+            arr = np.array(all_intervals) * 1000 
+            
+            tpot_avg = np.mean(arr)
+            tpot_p50 = np.percentile(arr, 50)
+            tpot_p90 = np.percentile(arr, 90)
+            tpot_p99 = np.percentile(arr, 99)
+            
+            print(f"  Global TPOT Avg: {tpot_avg:.2f} ms")
+            print(f"  Global TPOT P50: {tpot_p50:.2f} ms")
+            print(f"  Global TPOT P90: {tpot_p90:.2f} ms")
+            print(f"  Global TPOT P99: {tpot_p99:.2f} ms")
+            print(f"  Total Tokens:    {len(arr)}")
+        else:
+            print("  No tokens generated.")
+
+    filename = f"result_pd_speed{SPEEDUP_FACTOR}x.csv"
+    res_df.drop(columns=['token_intervals'], errors='ignore').to_csv(filename, index=False)
+    print(f"\nData saved to {filename}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
