@@ -1,5 +1,4 @@
 #include "logger.h"
-#include "ipc.h"
 #include "shm_core.h"
 #include "scheduler.h"
 #include <iostream>
@@ -35,7 +34,7 @@ int main() {
     }
 
     // 绑定：当 IPC 发现新客户端时，交给 Scheduler 处理
-    ipcServer.start([&scheduler](std::unique_ptr<IChannel> channel) {
+    ipcServer.start([&scheduler](std::unique_ptr<ShmChannel> channel) {
         scheduler.onNewClient(std::move(channel));
     });
 

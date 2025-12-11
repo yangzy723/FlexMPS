@@ -29,7 +29,7 @@ std::pair<bool, std::string> Scheduler::makeDecision(const std::string& kernelTy
 }
 
 // 辅助函数：分割字符串
-std::vector<std::string> split(const std::string& s, char delimiter) {
+static std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(s);
@@ -39,13 +39,12 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
     return tokens;
 }
 
-void Scheduler::onNewClient(std::unique_ptr<IChannel> channel) {
+void Scheduler::onNewClient(std::unique_ptr<ShmChannel> channel) {
     std::lock_guard<std::mutex> lock(threadsMutex);
-    // 转移 channel 所有权给线程
     workers.emplace_back(&Scheduler::clientHandler, this, std::move(channel));
 }
 
-void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
+void Scheduler::clientHandler(std::unique_ptr<ShmChannel> channel) {
     long long sessionId = Logger::instance().incrementConnectionCount();
     std::string clientKey = channel->getType() + ":" + channel->getId();
     std::string logKey = channel->getName();
@@ -57,16 +56,17 @@ void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
     Logger::instance().write(ss.str(), logKey);
     std::cout << ss.str() << std::endl;
 
+    // 标记服务端就绪
     channel->setReady();
 
     std::string message;
-    while (running && channel->isConnected()) {
-        // 阻塞接收 (底层实现忙等待)
+    while (running.load() && channel->isConnected()) {
+        // 带超时的接收（100ms），便于响应停止信号
         if (!channel->recvBlocking(message)) {
-             continue; 
+            continue;  // 超时或队列空，重新检查 running 标志
         }
 
-        // 简单的协议解析
+        // 协议解析
         while (!message.empty() && (message.back() == '\n' || message.back() == '\r')) {
             message.pop_back();
         }
@@ -93,7 +93,7 @@ void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
         auto decision = makeDecision(kernelType);
         
         // 构建响应
-        std::string response = reqId + "|" + (decision.first ? "1" : "0") + "|" + decision.second + "\n";
+        std::string response = ipc::createResponseMessage(reqId, decision.first, decision.second);
         
         if (!channel->sendBlocking(response)) {
             Logger::instance().write("[Scheduler] Send timeout for " + clientKey, logKey);

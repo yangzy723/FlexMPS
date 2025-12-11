@@ -1,5 +1,6 @@
 #pragma once
-#include "ipc.h"
+
+#include "shm_core.h"
 #include <vector>
 #include <thread>
 #include <atomic>
@@ -12,7 +13,7 @@ public:
     ~Scheduler();
 
     // 收到新连接的回调
-    void onNewClient(std::unique_ptr<IChannel> channel);
+    void onNewClient(std::unique_ptr<ShmChannel> channel);
     
     // 停止所有服务
     void stop();
@@ -21,7 +22,7 @@ public:
     size_t getActiveCount();
 
 private:
-    void clientHandler(std::unique_ptr<IChannel> channel);
+    void clientHandler(std::unique_ptr<ShmChannel> channel);
     
     // 业务逻辑
     std::pair<bool, std::string> makeDecision(const std::string& kernelType);

@@ -1,44 +1,63 @@
 #pragma once
-#include <string>
-#include <functional>
-#include <memory>
 
-// 代表一个已连接的客户端通道
-class IChannel {
+/**
+ * @file ipc.h
+ * @brief IPC 接口（服务端兼容层）
+ * 
+ * 此文件导入共享层的定义，为服务端代码提供向后兼容
+ */
+
+// 引入 IPC 核心模块
+#include "ipc_common.h"
+#include "ipc_interface.h"
+#include "shm_transport.h"
+
+// ============================================================
+//  服务端特定的简化接口（可选，向后兼容）
+// ============================================================
+
+/**
+ * IChannel 的简化包装器
+ * 为原有服务端代码提供简化接口
+ */
+class ServerChannel {
 public:
-    virtual ~IChannel() = default;
+    explicit ServerChannel(std::unique_ptr<ipc::IChannel> channel)
+        : channel_(std::move(channel)) {}
+    
+    virtual ~ServerChannel() = default;
 
-    // 阻塞接收消息 (返回 true 表示收到，false 表示超时或错误)
-    // 实现层应处理忙等待/CPU pause
-    virtual bool recvBlocking(std::string& outMsg) = 0;
+    // 阻塞接收消息
+    bool recvBlocking(std::string& outMsg) {
+        return channel_->getRequestQueue().receiveBlocking(outMsg, -1);
+    }
 
     // 发送响应
-    virtual bool sendBlocking(const std::string& msg) = 0;
+    bool sendBlocking(const std::string& msg) {
+        return channel_->getResponseQueue().sendBlocking(msg, 5000);
+    }
 
-    // 检查连接是否仍然存活
-    virtual bool isConnected() = 0;
+    // 检查连接
+    bool isConnected() {
+        return channel_->isClientConnected();
+    }
 
-    // 标记调度器已准备好服务此通道 (握手用)
-    virtual void setReady() = 0;
+    // 标记就绪
+    void setReady() {
+        channel_->setServerReady(true);
+    }
 
     // 获取元数据
-    virtual std::string getId() const = 0;
-    virtual std::string getType() const = 0;
-    virtual std::string getName() const = 0;
+    std::string getId() const { return channel_->getUniqueId(); }
+    std::string getType() const { return channel_->getClientType(); }
+    std::string getName() const { return channel_->getName(); }
+
+    // 获取底层通道
+    ipc::IChannel* getChannel() { return channel_.get(); }
+
+private:
+    std::unique_ptr<ipc::IChannel> channel_;
 };
 
-// 代表 IPC 服务端/监听器
-class IIPCServer {
-public:
-    virtual ~IIPCServer() = default;
-
-    // 初始化
-    virtual bool init() = 0;
-
-    // 开始监听新客户端
-    // 当有新客户端连接时，调用 callback
-    virtual void start(std::function<void(std::unique_ptr<IChannel>)> onNewClient) = 0;
-
-    // 停止服务
-    virtual void stop() = 0;
-};
+// 类型别名（向后兼容）
+using IIPCServer = ipc::IServerListener;
