@@ -1,7 +1,10 @@
 scheduler
 result.jsonl
+test.sh
 
 *.log
 *.json
 *.csv
 *.nsys-rep
+*.o
+scheduler_service
