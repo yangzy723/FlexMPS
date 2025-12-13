@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -pthread -O2
+CXXFLAGS = -std=c++11 -Wall -pthread -O2
 LDFLAGS = -lrt -pthread
 
 TARGET = scheduler_service

@@ -1,5 +1,6 @@
-#include "scheduler.h"
 #include "logger.h"
+#include "scheduler.h"
+
 #include <sstream>
 #include <iostream>
 
@@ -29,7 +30,7 @@ std::pair<bool, std::string> Scheduler::makeDecision(const std::string& kernelTy
 }
 
 // 辅助函数：分割字符串
-static std::vector<std::string> split(const std::string& s, char delimiter) {
+std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(s);
@@ -39,34 +40,33 @@ static std::vector<std::string> split(const std::string& s, char delimiter) {
     return tokens;
 }
 
-void Scheduler::onNewClient(std::unique_ptr<ShmChannel> channel) {
+void Scheduler::onNewClient(std::unique_ptr<IChannel> channel) {
     std::lock_guard<std::mutex> lock(threadsMutex);
+    // 转移 channel 所有权给线程
     workers.emplace_back(&Scheduler::clientHandler, this, std::move(channel));
 }
 
-void Scheduler::clientHandler(std::unique_ptr<ShmChannel> channel) {
+void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
     long long sessionId = Logger::instance().incrementConnectionCount();
     std::string clientKey = channel->getType() + ":" + channel->getId();
-    std::string logKey = channel->getName();
     Logger::instance().recordConnectionStat(clientKey);
 
     std::stringstream ss;
     ss << "[Scheduler] Session #" << sessionId << " started for " 
        << clientKey << " (SHM: " << channel->getName() << ")";
-    Logger::instance().write(ss.str(), logKey);
+    Logger::instance().write(ss.str());
     std::cout << ss.str() << std::endl;
 
-    // 标记服务端就绪
     channel->setReady();
 
     std::string message;
-    while (running.load() && channel->isConnected()) {
-        // 带超时的接收（100ms），便于响应停止信号
+    while (running && channel->isConnected()) {
+        // 阻塞接收 (底层实现忙等待)
         if (!channel->recvBlocking(message)) {
-            continue;  // 超时或队列空，重新检查 running 标志
+             continue; 
         }
 
-        // 协议解析
+        // 简单的协议解析
         while (!message.empty() && (message.back() == '\n' || message.back() == '\r')) {
             message.pop_back();
         }
@@ -77,31 +77,29 @@ void Scheduler::clientHandler(std::unique_ptr<ShmChannel> channel) {
         }
 
         std::string kernelType = parts[0];     
-        std::string reqId = parts[1];        
+        std::string reqId = parts[1];  
+        std::string clientId = parts[2];      
         
         long long currentId = ++globalKernelId;
         Logger::instance().recordKernelStat(kernelType);
 
-        // 抽样日志
-        if (currentId % 100 == 0 || currentId <= 10) {
-            ss.str("");
-            ss << "Kernel " << currentId << ": " << kernelType;
-            Logger::instance().write(ss.str(), logKey);
-        }
+        ss.str("");
+        ss << "Kernel " << currentId << ": " << kernelType << " from " << clientId;
+        Logger::instance().write(ss.str());
 
         // 决策
         auto decision = makeDecision(kernelType);
         
         // 构建响应
-        std::string response = ipc::createResponseMessage(reqId, decision.first, decision.second);
+        std::string response = reqId + "|" + (decision.first ? "1" : "0") + "|" + decision.second + "\n";
         
         if (!channel->sendBlocking(response)) {
-            Logger::instance().write("[Scheduler] Send timeout for " + clientKey, logKey);
+            Logger::instance().write("[Scheduler] Send timeout for " + clientKey);
         }
     }
 
     ss.str("");
     ss << "[Scheduler] Session #" << sessionId << " ended (" << clientKey << ")";
-    Logger::instance().write(ss.str(), logKey);
+    Logger::instance().write(ss.str());
     std::cout << ss.str() << std::endl;
 }

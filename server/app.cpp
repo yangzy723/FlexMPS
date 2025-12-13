@@ -1,6 +1,8 @@
+#include "ipc.h"
 #include "logger.h"
 #include "shm_core.h"
 #include "scheduler.h"
+
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -18,8 +20,8 @@ int main() {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
 
-    // 初始化日志
-    Logger::instance().init();
+    // 初始化日志目录
+    Logger::initDir();
 
     // 初始化核心调度器
     Scheduler scheduler;
@@ -33,29 +35,15 @@ int main() {
         return 1;
     }
 
-    // 绑定：当 IPC 发现新客户端时，交给 Scheduler 处理
-    ipcServer.start([&scheduler](std::unique_ptr<ShmChannel> channel) {
+    ipcServer.start([&scheduler](std::unique_ptr<IChannel> channel) {
         scheduler.onNewClient(std::move(channel));
     });
 
     std::cout << "[Main] System running. Press Ctrl+C to exit." << std::endl;
-
-    // 主循环 (监控与维护)
-    auto lastRotate = std::chrono::steady_clock::now();
-
     while (g_app_running) {
-        sleep(1);
-
-        auto now = std::chrono::steady_clock::now();
-        
-        // 日志轮转 (每分钟)
-        if (std::chrono::duration_cast<std::chrono::minutes>(now - lastRotate).count() >= 1) {
-            Logger::instance().rotateLogFile();
-            lastRotate = now;
-        }
+        sleep(1000);
     }
 
-    // 优雅退出
     std::cout << "[Main] Stopping services..." << std::endl;
     ipcServer.stop();
     scheduler.stop();

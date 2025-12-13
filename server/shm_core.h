@@ -1,109 +1,61 @@
 #pragma once
-
-/**
- * @file shm_core.h
- * @brief 共享内存核心实现（服务端兼容层）
- * 
- * 此文件导入共享层的共享内存实现，为服务端代码提供向后兼容
- */
-
 #include "ipc.h"
 #include "config.h"
 #include <atomic>
 #include <thread>
 #include <vector>
 #include <mutex>
-#include <functional>
 
-// ============================================================
-//  ShmChannel - 服务端通道包装类
-// ============================================================
-
-class ShmChannel {
+class ShmChannel : public IChannel {
 public:
-    ShmChannel(std::unique_ptr<ipc::IChannel> channel)
-        : channel_(std::move(channel)) {}
+    ShmChannel(ClientChannelStruct* ptr, std::string name, std::string type, std::string id, pid_t pid);
+    ~ShmChannel();
+
+    bool recvBlocking(std::string& outMsg) override;
+    bool sendBlocking(const std::string& msg) override;
+    bool isConnected() override;
+    void setReady() override;
     
-    ~ShmChannel() {
-        if (channel_) {
-            channel_->setServerReady(false);
-        }
-    }
-
-    bool recvBlocking(std::string& outMsg) {
-        // 使用超时轮询，以便能响应停止信号
-        // 每 100ms 检查一次，如果队列为空则返回 false
-        return channel_->getRequestQueue().receiveBlocking(outMsg, 100);
-    }
-
-    bool sendBlocking(const std::string& msg) {
-        return channel_->getResponseQueue().sendBlocking(msg, 5000);
-    }
-
-    bool isConnected() {
-        return channel_->isClientConnected();
-    }
-
-    void setReady() {
-        channel_->setServerReady(true);
-    }
+    std::string getId() const override { return uniqueId; }
+    std::string getType() const override { return clientType; }
+    std::string getName() const override { return shmName; }
 
     // 清理
-    void unlink() {
-        // 由工厂管理
-    }
-    
-    std::string getId() const { return channel_->getUniqueId(); }
-    std::string getType() const { return channel_->getClientType(); }
-    std::string getName() const { return channel_->getName(); }
-
-    ipc::IChannel* getChannel() { return channel_.get(); }
+    void unlink();
 
 private:
-    std::unique_ptr<ipc::IChannel> channel_;
+    ClientChannelStruct* channelPtr;
+    std::string shmName;
+    std::string clientType;
+    std::string uniqueId;
+    pid_t clientPid;
+
+    // 辅助 SPSC 逻辑
+    bool spsc_try_pop(char* out_data, size_t max_len);
+    bool spsc_try_push(const char* data, size_t len);
 };
 
-// ============================================================
-//  ShmServer - 服务端监听器
-// ============================================================
-
-class ShmServer {
+class ShmServer : public IIPCServer {
 public:
-    ShmServer() : running_(false) {}
-    
-    ~ShmServer() {
-        stop();
-    }
+    ShmServer();
+    ~ShmServer();
 
-    bool init() {
-        listener_ = std::make_unique<ipc::shm::ShmServerListener>();
-        return listener_->init();
-    }
-
-    void start(std::function<void(std::unique_ptr<ShmChannel>)> onNewClient) {
-        userCallback_ = onNewClient;
-        running_.store(true);
-        
-        listener_->start([this](std::unique_ptr<ipc::IChannel> channel) {
-            // 包装成 ShmChannel 后交给用户回调
-            auto shmChannel = std::make_unique<ShmChannel>(std::move(channel));
-            if (userCallback_) {
-                userCallback_(std::move(shmChannel));
-            }
-        });
-    }
-
-    void stop() {
-        running_.store(false);
-        if (listener_) {
-            listener_->stop();
-        }
-    }
-
-    bool isRunning() const { return running_.load(); }
+    bool init() override;
+    void start(std::function<void(std::unique_ptr<IChannel>)> onNewClient) override;
+    void stop() override;
 
 private:
-    std::atomic<bool> running_;
-    std::unique_ptr<ipc::shm::ShmServerListener> listener_;
-    std::function<void(std::unique_ptr<ShmChannel>)> userCallback_;
+    void scannerLoop();
+    void discoverClient(int slot);
+    void cleanupDisconnected();
+    std::string getRegistryName();
+
+    std::atomic<bool> running;
+    ClientRegistry* registry;
+    std::thread scannerThread;
+    std::function<void(std::unique_ptr<IChannel>)> callback;
+
+    // 记录正在服务的 slot，防止重复创建
+    std::mutex internalMutex;
+    std::vector<int> activeSlots; 
 };
