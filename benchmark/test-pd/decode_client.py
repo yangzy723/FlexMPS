@@ -35,7 +35,7 @@ async def send_request(session, req_id):
             "ignore_eos": True
         }
     }
-    
+
     start = time.perf_counter()
     success = False
     try:
@@ -44,23 +44,23 @@ async def send_request(session, req_id):
             success = True
     except Exception as e:
         print(f"[D-{req_id}] Request Failed: {e}", file=sys.stderr)
-    
+
     latency = time.perf_counter() - start
     return latency if success else None
 
 async def main(args):
     print(f"--- [Decode Worker] Starting {args.count} requests to {URL} ---")
     print(f"--- [Decode Worker] Prompt Length: {PROMPT_LEN} random words ---")
-    
+
     async with aiohttp.ClientSession() as session:
         tasks = [send_request(session, i) for i in range(args.count)]
-        
+
         start_wall = time.perf_counter()
         results = await asyncio.gather(*tasks)
         end_wall = time.perf_counter()
 
     valid_latencies = [r for r in results if r is not None]
-    
+
     # 保存结果到 JSON
     output_data = {
         "type": "decode",
@@ -68,7 +68,7 @@ async def main(args):
         "latencies": valid_latencies,
         "count": len(valid_latencies)
     }
-    
+
     with open(args.output, 'w') as f:
         json.dump(output_data, f)
 
@@ -79,5 +79,5 @@ if __name__ == "__main__":
     parser.add_argument("--count", type=int, default=128, help="Number of requests")
     parser.add_argument("--output", type=str, required=True, help="Output JSON file")
     args = parser.parse_args()
-    
+
     asyncio.run(main(args))

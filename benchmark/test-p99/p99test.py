@@ -15,7 +15,7 @@ DEFAULT_PREFILL_URL = "http://localhost:30001/generate"
 DEFAULT_DECODE_URL = "http://localhost:30002/generate"
 
 DECODE_OUTPUT_LEN = 256
-DECODE_PROMPT_LEN = 10 
+DECODE_PROMPT_LEN = 10
 
 @dataclass
 class Metric:
@@ -59,40 +59,40 @@ async def send_request_stream(session, url, req_type, input_len, output_len, req
     prompt = generate_prompt(input_len)
     payload = {
         "text": prompt,
-        "stream": True,  # 开启流式
+        "stream": True,
         "sampling_params": {
             "max_new_tokens": output_len,
             "ignore_eos": True
         }
     }
-    
+
     start_time = time.perf_counter()
     ttft = None
     tpots = []
-    
+
     try:
         async with session.post(url, json=payload) as response:
             if response.status != 200:
                 print(f"[{req_type}-{req_id}] Error: Status {response.status}", file=sys.stderr)
                 return None, []
-            
+
             # 记录上一次收到数据的时间
             last_chunk_time = None
-            
+
             # 使用 iter_any 读取流式数据
             async for _ in response.content.iter_any():
                 now = time.perf_counter()
-                
+
                 if last_chunk_time is None:
                     # 收到第一个 chunk -> TTFT
                     ttft = (now - start_time) * 1000
                 else:
-                    # 收到后续 chunk -> TPOT (Inter-token Latency)
+                    # 收到后续 chunk -> TPOT
                     inter_token_latency = (now - last_chunk_time) * 1000
                     tpots.append(inter_token_latency)
-                
+
                 last_chunk_time = now
-                
+
     except Exception as e:
         print(f"[{req_type}-{req_id}] Request Failed: {e}", file=sys.stderr)
         return None, []
@@ -105,20 +105,19 @@ async def send_request_stream(session, url, req_type, input_len, output_len, req
 async def run_batch(url, req_type, count, input_len, output_len):
     async with aiohttp.ClientSession() as session:
         tasks = [
-            send_request_stream(session, url, req_type, input_len, output_len, i) 
+            send_request_stream(session, url, req_type, input_len, output_len, i)
             for i in range(count)
         ]
         results = await asyncio.gather(*tasks)
-    
-    # results 是一个 list of (ttft, tpot_list)
+
     ttft_list = []
     all_tpots = []
-    
+
     for r in results:
         if r and r[0] is not None:
             ttft_list.append(r[0])
-            all_tpots.extend(r[1]) 
-            
+            all_tpots.extend(r[1])
+
     return ttft_list, all_tpots
 
 def calculate_metric(data_points):
@@ -128,7 +127,7 @@ def calculate_metric(data_points):
     """
     if not data_points:
         return Metric(0, 0)
-    
+
     return Metric(
         avg=np.mean(data_points),
         p99=np.percentile(data_points, 99)
@@ -147,9 +146,9 @@ async def main(args):
 
     for p_len in prefill_lengths:
         print(f"\n>>> Testing Prefill Length: {p_len} (Randomized)")
-        
+
         # 汇总所有轮次的数据
-        sep_p_ttfts = [] 
+        sep_p_ttfts = []
         sep_d_tpots = []
         col_p_ttfts = []
         col_d_tpots = []
@@ -175,18 +174,18 @@ async def main(args):
             async with aiohttp.ClientSession() as session:
                 task_p = [send_request_stream(session, args.url_prefill, "prefill", p_len, 1, i) for i in range(args.batch_size)]
                 task_d = [send_request_stream(session, args.url_decode, "decode", DECODE_PROMPT_LEN, DECODE_OUTPUT_LEN, i) for i in range(args.batch_size)]
-                
+
                 all_res = await asyncio.gather(*(task_p + task_d))
-                
+
                 # 拆分结果
                 for res in all_res[:args.batch_size]:
                     if res and res[0] is not None:
                         col_p_ttfts.append(res[0])
-                
+
                 for res in all_res[args.batch_size:]:
                     if res and res[0] is not None:
                         col_d_tpots.extend(res[1])
-            
+
             print(f"    Batch Done.")
             await asyncio.sleep(1)
 
@@ -197,7 +196,7 @@ async def main(args):
             ttft=calculate_metric(sep_p_ttfts),
             tpot=calculate_metric(sep_d_tpots)
         ))
-        
+
         results_db.append(ExperimentResult(
             prefill_len=p_len,
             mode="colocate",
@@ -220,7 +219,7 @@ def plot_results(data: List[ExperimentResult], filename: str):
     # 提取数据
     sep_ttft_p99 = [next(d.ttft.p99 for d in data if d.prefill_len == l and d.mode == "separate") for l in lengths]
     col_ttft_p99 = [next(d.ttft.p99 for d in data if d.prefill_len == l and d.mode == "colocate") for l in lengths]
-    
+
     sep_ttft_avg = [next(d.ttft.avg for d in data if d.prefill_len == l and d.mode == "separate") for l in lengths]
     col_ttft_avg = [next(d.ttft.avg for d in data if d.prefill_len == l and d.mode == "colocate") for l in lengths]
 
@@ -266,6 +265,6 @@ if __name__ == "__main__":
     parser.add_argument("--repeat", type=int, default=9, help="Number of repetitions")
     parser.add_argument("--output-json", type=str, default="benchmark_results.json")
     parser.add_argument("--output-img", type=str, default="benchmark_results.png")
-    
+
     args = parser.parse_args()
     asyncio.run(main(args))

@@ -24,7 +24,7 @@ for C in "${COUNTS[@]}"; do
 
     for ((r=1; r<=REPS; r++)); do
         echo "   --- Repetition $r / $REPS ---"
-        
+
         # 定义文件名
         FILE_PREFIX="${RESULT_DIR}/res_c${C}_r${r}"
 
@@ -35,7 +35,7 @@ for C in "${COUNTS[@]}"; do
         python prefill_client.py --count $C --output "${FILE_PREFIX}_serial_prefill.json" > /dev/null 2>&1
         sleep 1
         python decode_client.py --count $C --output "${FILE_PREFIX}_serial_decode.json" > /dev/null 2>&1
-        
+
         # ----------------------------------------------
         # 阶段 2: 并行干扰测试 (Parallel)
         # ----------------------------------------------
@@ -45,7 +45,7 @@ for C in "${COUNTS[@]}"; do
         # 后台运行
         python prefill_client.py --count $C --output "${FILE_PREFIX}_parallel_prefill.json" > /dev/null 2>&1 &
         PID_P=$!
-        
+
         python decode_client.py --count $C --output "${FILE_PREFIX}_parallel_decode.json" > /dev/null 2>&1 &
         PID_D=$!
 

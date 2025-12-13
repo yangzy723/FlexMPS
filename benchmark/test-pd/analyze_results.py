@@ -13,7 +13,7 @@ CSV_FILE = "experiment_summary.csv"
 PLOT_FILE = "mps_benchmark_analysis.png"
 
 # 图表字体设置 (如需中文支持可取消注释)
-# plt.rcParams['font.sans-serif'] = ['SimHei'] 
+# plt.rcParams['font.sans-serif'] = ['SimHei']
 # plt.rcParams['axes.unicode_minus'] = False
 # ==============================================================
 
@@ -52,16 +52,16 @@ def collect_data():
         valid_reps = 0
         for r in range(1, REPS + 1):
             prefix = f"{RESULT_DIR}/res_c{c}_r{r}"
-            
+
             # 加载单次实验的 4 个文件
-            s_p = load_json(f"{prefix}_serial_prefill.json") # Serial Prefill
-            s_d = load_json(f"{prefix}_serial_decode.json")  # Serial Decode
-            p_p = load_json(f"{prefix}_parallel_prefill.json") # Parallel Prefill
-            p_d = load_json(f"{prefix}_parallel_decode.json")  # Parallel Decode
+            s_p = load_json(f"{prefix}_serial_prefill.json")    # Serial Prefill
+            s_d = load_json(f"{prefix}_serial_decode.json")     # Serial Decode
+            p_p = load_json(f"{prefix}_parallel_prefill.json")  # Parallel Prefill
+            p_d = load_json(f"{prefix}_parallel_decode.json")   # Parallel Decode
 
             if not all([s_p, s_d, p_p, p_d]):
                 continue
-            
+
             valid_reps += 1
 
             # 1. 计算总耗时 (Wall Time)
@@ -85,7 +85,7 @@ def collect_data():
 
         # 计算该 Count 下的平均值
         avg_data = {k: statistics.mean(v) for k, v in metrics.items()}
-        
+
         # 计算衍生指标
         speedup = avg_data["s_total"] / avg_data["p_total"] if avg_data["p_total"] > 0 else 0
         p_deg = ((avg_data["p_p_lat"] - avg_data["s_p_lat"]) / avg_data["s_p_lat"] * 100) if avg_data["s_p_lat"] > 0 else 0
@@ -120,10 +120,10 @@ def plot_visual_style(results):
     time_serial = [r['s_total'] for r in results]
     time_parallel = [r['p_total'] for r in results]
     speedups = [r['speedup'] for r in results]
-    
+
     prefill_serial = [r['s_p_lat'] for r in results]
     prefill_parallel = [r['p_p_lat'] for r in results]
-    
+
     decode_serial = [r['s_d_lat'] for r in results]
     decode_parallel = [r['p_d_lat'] for r in results]
 
@@ -196,7 +196,7 @@ def plot_visual_style(results):
     ax4.axis('off')
 
     avg_speedup = np.mean(speedups) if speedups else 0
-    
+
     # 计算平均 Decode 劣化
     d_degs = [((dp - ds)/ds)*100 for dp, ds in zip(decode_parallel, decode_serial) if ds > 0]
     decode_deg_avg = np.mean(d_degs) if d_degs else 0
@@ -237,7 +237,7 @@ def main():
             print(f"\n[保存] 汇总数据已保存至: {CSV_FILE}")
         except IOError as e:
             print(f"保存 CSV 失败: {e}")
-    
+
     # 3. 绘图 (Visual 风格)
     plot_visual_style(results)
 

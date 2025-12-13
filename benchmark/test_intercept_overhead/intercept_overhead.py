@@ -52,22 +52,22 @@ metrics_config = {
 for (phase, metric), config in metrics_config.items():
     ax = config['ax']
     subset = df[(df['Phase'] == phase) & (df['Metric'] == metric)]
-    
+
     # Draw barplot
     sns.barplot(data=subset, x='Setting', y='Value', ax=ax, color=config['color'], edgecolor='black')
-    
+
     # Set titles and labels (English)
     title_suffix = "(Higher is Better)" if metric == 'Throughput' else "(Lower is Better)"
     ax.set_title(f"{phase} - {metric}\n{title_suffix}", fontsize=12, fontweight='bold')
     ax.set_ylabel(config['ylabel'])
-    ax.set_xlabel('') 
-    
+    ax.set_xlabel('')
+
     # Add value annotations
     for p in ax.patches:
         height = p.get_height()
         ax.annotate(config['fmt'].format(height),
                     (p.get_x() + p.get_width() / 2., height),
-                    ha='center', va='bottom', 
+                    ha='center', va='bottom',
                     xytext=(0, 5), textcoords='offset points', fontsize=10)
 
 plt.tight_layout()

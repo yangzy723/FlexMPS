@@ -7,7 +7,6 @@
  * 此文件导入共享层的定义，为服务端代码提供向后兼容
  */
 
-// 引入 IPC 核心定义
 #include "ipc_common.h"
 
 // ============================================================
@@ -28,6 +27,6 @@ constexpr size_t SPSC_MSG_SIZE = ipc::MAX_MSG_SIZE;
 constexpr size_t CACHE_LINE_SIZE = ipc::CACHE_LINE_SIZE;
 constexpr size_t MAX_REGISTERED_CLIENTS = ipc::MAX_CLIENTS;
 
-// 保留兼容性宏
+// 网络设置
 #define SCHEDULER_PORT 9999
 #define LOCALHOST "127.0.0.1"
