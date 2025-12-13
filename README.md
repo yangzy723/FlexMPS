@@ -25,6 +25,18 @@ git submodule update --init --recursive
 ```
 ---
 
+## SgLang
+```shell
+cd sglang-v0.5.4
+pip install --upgrade pip
+# 这个只是在安装 python 包，对 python 代码的修改通过以下更新生效
+python -m pip install -e "python"
+pip uninstall torch
+
+# 若修改了 flashinfer 等第三方库的代码，请务必注意 sgl-kernel/ 下 CMakeLists.txt 的第三方库路径，以及是否需要重新编译 sgl-kerenl/
+export Torch_DIR=$(python -c "import torch; print(torch.utils.cmake_prefix_path)")/Torch
+```
+
 ## PyTorch
 ```shell
 cd pytorch-v2.8.0
@@ -48,29 +60,17 @@ python -m pip install --no-build-isolation -e . -v --no-deps
 - https://docs.flashinfer.ai/installation.html
 - https://www.cnblogs.com/iLex/p/19036981
 
-## SgLang
-```shell
-cd sglang-v0.5.4
-pip install --upgrade pip
-# 这个只是在安装 python 包，对 python 代码的修改通过以下更新生效
-python -m pip install -e "python"
-pip uninstall torch
-
-# 若修改了 flashinfer 等第三方库的代码，请务必注意 sgl-kernel/ 下 CMakeLists.txt 的第三方库路径，以及是否需要重新编译 sgl-kerenl/
-export Torch_DIR=$(python -c "import torch; print(torch.utils.cmake_prefix_path)")/Torch
-```
-
 ---
 
 ## Run
 ```shell
 # 启动拦截服务端
 cd server
-g++ scheduler.cpp -o scheduler
+make
 ./scheduler
 
 # 启动推理客户端
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0
 python -m sglang.bench_one_batch --model-path /data/datasets/models-hf/Llama-3.1-8B-Instruct/ --batch-size 64 --input-len 512 --mem-fraction-static 0.6 --disable-cuda-graph
 
 # nsys
@@ -98,7 +98,7 @@ nvidia-cuda-mps-control -d
 
 # 启动拦截服务端
 cd server
-g++ scheduler.cpp -o scheduler
+make
 ./scheduler
 
 # New Terminal, Prefill Node
@@ -118,7 +118,7 @@ python -m sglang.launch_server \
    --mem-fraction-static 0.4
 
 # 启动压力测试程序
-cd test-pd
+cd benchmark/test-pd
 bash run.sh
 ```
 

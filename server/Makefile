@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall -pthread -O2
 LDFLAGS = -lrt -pthread
 
-TARGET = scheduler_service
+TARGET = scheduler
 SRCS = app.cpp logger.cpp shm_core.cpp scheduler.cpp
 OBJS = $(SRCS:.cpp=.o)
 
