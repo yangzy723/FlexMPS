@@ -14,7 +14,8 @@ void Scheduler::stop() {
     running = false;
     std::lock_guard<std::mutex> lock(threadsMutex);
     for (auto& t : workers) {
-        if (t.joinable()) t.join();
+        if (t.joinable())
+            t.join();
     }
     workers.clear();
 }
@@ -41,25 +42,24 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
 }
 
 void Scheduler::onNewClient(std::unique_ptr<IChannel> channel) {
-    std::lock_guard<std::mutex> lock(threadsMutex);
+    LogManager::instance().sessionIdIncrement();
     // 转移 channel 所有权给线程
+    std::lock_guard<std::mutex> lock(threadsMutex);
     workers.emplace_back(&Scheduler::clientHandler, this, std::move(channel));
 }
 
 void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
-    long long sessionId = Logger::instance().incrementConnectionCount();
-    std::string clientKey = channel->getType() + ":" + channel->getId();
-    Logger::instance().recordConnectionStat(clientKey);
-
     std::stringstream ss;
+    long long sessionId = LogManager::instance().getSessionId();
+    std::string clientKey = channel->getType() + ":" + channel->getId();
     ss << "[Scheduler] Session #" << sessionId << " started for " 
        << clientKey << " (SHM: " << channel->getName() << ")";
-    Logger::instance().write(ss.str());
     std::cout << ss.str() << std::endl;
 
     channel->setReady();
 
     std::string message;
+    std::string the_unique_id;
     while (running && channel->isConnected()) {
         // 阻塞接收 (底层实现忙等待)
         if (!channel->recvBlocking(message)) {
@@ -78,14 +78,18 @@ void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
 
         std::string kernelType = parts[0];     
         std::string reqId = parts[1];  
-        std::string clientId = parts[2];      
-        
+        std::string client_id = parts[2];
+        std::string unique_id = parts.size() >=4 ? parts[3] : client_id;
+        if (the_unique_id.empty()) {
+            the_unique_id = unique_id;
+        }
+
         long long currentId = ++globalKernelId;
-        Logger::instance().recordKernelStat(kernelType);
+        LogManager::instance().getLogger(unique_id)->recordKernelStat(kernelType);
 
         ss.str("");
-        ss << "Kernel " << currentId << ": " << kernelType << " from " << clientId;
-        Logger::instance().write(ss.str());
+        ss << "Kernel " << currentId << ": " << kernelType << " from " << client_id;
+        LogManager::instance().getLogger(unique_id)->write(ss.str());
 
         // 决策
         auto decision = makeDecision(kernelType);
@@ -94,12 +98,11 @@ void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
         std::string response = reqId + "|" + (decision.first ? "1" : "0") + "|" + decision.second + "\n";
         
         if (!channel->sendBlocking(response)) {
-            Logger::instance().write("[Scheduler] Send timeout for " + clientKey);
+            LogManager::instance().getLogger(unique_id)->write("[Scheduler] Send timeout for " + clientKey);
         }
     }
-
+    LogManager::instance().removeLogger(the_unique_id);
     ss.str("");
     ss << "[Scheduler] Session #" << sessionId << " ended (" << clientKey << ")";
-    Logger::instance().write(ss.str());
     std::cout << ss.str() << std::endl;
 }

@@ -1,155 +1,165 @@
 #include "logger.h"
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <chrono>
 #include <sys/stat.h>
-#include <sys/types.h>
 
-std::mutex Logger::registryMutex;
-std::unordered_map<std::string, Logger*> Logger::loggerMap;
-std::string Logger::sessionDirectory = "";
+// ==========================================
+// Logger Implementation (Individual Session)
+// ==========================================
 
-void Logger::initDir() {
+Logger::Logger(const std::string& id, const std::string& dirPath) 
+    : id_(id), dirPath_(dirPath) {
+    
+    std::string filename;
+    if (id_.empty()) {
+        filename = dirPath_ + "/meta.log";
+    } else {
+        filename = dirPath_ + "/process_" + id_ + ".log";
+    }
+
+    fileStream_.open(filename, std::ios::out | std::ios::app);
+    if (!fileStream_.is_open()) {
+        std::cerr << "[Logger] Error: Failed to open log file: " << filename << std::endl;
+    }
+}
+
+Logger::~Logger() {
+    finalize();
+}
+
+void Logger::write(const std::string& message) {
+    std::lock_guard<std::mutex> lock(opMutex_);
+    if (fileStream_.is_open()) {
+        fileStream_ << message << "\n";
+        fileStream_.flush(); 
+    }
+}
+
+void Logger::recordKernelStat(const std::string& kernelType) {
+    std::lock_guard<std::mutex> lock(opMutex_);
+    kernelStats_[kernelType]++;
+}
+
+void Logger::finalize() {
+    std::lock_guard<std::mutex> lock(opMutex_);
+    
+    if (isClosed_ || !fileStream_.is_open()) {
+        return;
+    }
+
+    fileStream_ << "\n=======================================================\n";
+    fileStream_ << "      SESSION STATISTICS (" << (id_.empty() ? "Global" : id_) << ")\n";
+    fileStream_ << "=======================================================\n";
+
+    if (kernelStats_.empty()) {
+        fileStream_ << "No kernels executed.\n";
+    } else {
+        using PairType = std::pair<std::string, long long>;
+        std::vector<PairType> sortedStats(kernelStats_.begin(), kernelStats_.end());
+
+        std::sort(sortedStats.begin(), sortedStats.end(), 
+            [](const PairType& a, const PairType& b) {
+                return a.second > b.second;
+            });
+
+        fileStream_ << std::left << std::setw(50) << "Kernel Name" << " | " << "Count" << "\n";
+        fileStream_ << "---------------------------------------------------|--------\n";
+        
+        long long total = 0;
+        for (const auto& item : sortedStats) {
+            fileStream_ << std::left << std::setw(50) << item.first << " | " << item.second << "\n";
+            total += item.second;
+        }
+        fileStream_ << "---------------------------------------------------|--------\n";
+        fileStream_ << std::left << std::setw(50) << "TOTAL KERNEL CALLS" << " | " << total << "\n";
+    }
+    fileStream_ << "=======================================================\n";
+    
+    fileStream_.flush();
+    fileStream_.close();
+    isClosed_ = true;
+}
+
+// ==========================================
+// LogManager Implementation (Global Singleton)
+// ==========================================
+
+LogManager& LogManager::instance() {
+    static LogManager instance;
+    return instance;
+}
+
+std::shared_ptr<Logger> LogManager::getLogger(const std::string& unique_id) {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+
+    // 1. 如果 Logger 已存在，直接返回
+    auto it = activeLoggers_.find(unique_id);
+    if (it != activeLoggers_.end()) {
+        return it->second;
+    }
+
+    // 2. 如果当前没有活跃的 Logger (0 -> 1)，初始化新目录
+    if (activeLoggers_.empty()) {
+        initDirectory();
+    }
+
+    // 3. 创建新的 Logger
+    std::shared_ptr<Logger> newLogger(new Logger(unique_id, currentSessionDir_));
+    activeLoggers_[unique_id] = newLogger;
+
+    return newLogger;
+}
+
+void LogManager::removeLogger(const std::string& unique_id) {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+    
+    auto it = activeLoggers_.find(unique_id);
+    if (it != activeLoggers_.end()) {
+        it->second->finalize();
+        activeLoggers_.erase(it);
+    }
+}
+
+LogManager::~LogManager() {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+    for (auto& pair : activeLoggers_) {
+        pair.second->finalize();
+    }
+    activeLoggers_.clear();
+}
+
+// 调用者已持有锁
+void LogManager::initDirectory() {
 #ifdef _WIN32
-    mkdir("logs");
+    _mkdir("logs");
 #else
     mkdir("logs", 0777);
 #endif
 
-    std::string timeStr = getCurrentTimeStr();
-    std::string dirPath = "logs/" + timeStr;
-
+    std::string timeStr = generateTimeStr();
+    currentSessionDir_  = "logs/" + timeStr;
+    
 #ifdef _WIN32
-    mkdir(dirPath.c_str());
+    _mkdir(currentSessionDir_.c_str());
 #else
-    mkdir(dirPath.c_str(), 0777);
+    mkdir(currentSessionDir_.c_str(), 0777);
 #endif
-
-    sessionDirectory = dirPath;
 }
 
-Logger& Logger::instance(std::string unique_id) {
-    std::lock_guard<std::mutex> lock(registryMutex);
-
-    auto it = loggerMap.find(unique_id);
-    if (it == loggerMap.end()) {
-        Logger* newLogger = new Logger();
-        newLogger->loggerId = unique_id;
-        loggerMap[unique_id] = newLogger;
-        newLogger->openLogFile(unique_id);
-        return *newLogger;
-    }
-    return *(it->second);
+std::string LogManager::getSessionDir() const {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+    return currentSessionDir_;
 }
 
-std::string Logger::getCurrentTimeStr() {
+std::string LogManager::generateTimeStr() {
     auto now = std::chrono::system_clock::now();
     std::time_t time = std::chrono::system_clock::to_time_t(now);
     std::tm tm = *std::localtime(&time);
     std::stringstream ss;
     ss << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
     return ss.str();
-}
-
-void Logger::openLogFile(const std::string& unique_id) {
-    std::lock_guard<std::mutex> lock(logMutex);
-
-    std::string filename;
-    if (unique_id.empty()) {
-        filename = sessionDirectory + "/meta.log";
-    } else {
-        filename = sessionDirectory + "/process_" + unique_id + ".log";
-    }
-
-    globalLogFile.open(filename, std::ios::out | std::ios::app);
-    if (!globalLogFile.is_open()) {
-        std::cerr << "[Logger] Fatal: Cannot create " << filename << std::endl;
-    } else {
-        // std::cout << "[Logger] Opened file: " << filename << std::endl;
-    }
-}
-
-void Logger::write(const std::string& message) {
-    std::lock_guard<std::mutex> lock(logMutex); 
-    if (globalLogFile.is_open()) {
-        globalLogFile << message << std::endl;
-        globalLogFile.flush(); 
-    }
-}
-
-void Logger::shutdown() {
-    std::lock_guard<std::mutex> lock(logMutex);
-    if (globalLogFile.is_open()) {
-        flushStatsToLog();
-        globalLogFile.close();
-    }
-}
-
-void Logger::recordKernelStat(const std::string& kernelType) {
-    std::lock_guard<std::mutex> lock(statsMutex);
-    currentLogKernelStats[kernelType]++;
-}
-
-void Logger::recordConnectionStat(const std::string& clientKey) {
-    std::lock_guard<std::mutex> lock(statsMutex);
-    currentLogConnectionStats[clientKey]++;
-}
-
-long long Logger::incrementConnectionCount() {
-    return connectionCount.fetch_add(1, std::memory_order_relaxed);
-}
-
-void Logger::flushStatsToLog() {
-    std::lock_guard<std::mutex> lock(statsMutex);
-
-    if (!globalLogFile.is_open()) return;
-
-    globalLogFile << "\n=======================================================\n";
-    globalLogFile << "      FINAL SESSION STATISTICS\n";
-    globalLogFile << "=======================================================\n";
-    
-    // 1. 连接总数
-    globalLogFile << "Total Connections Processed: " << connectionCount.load() << "\n";
-
-    // 2. 客户端连接详情
-    if (!currentLogConnectionStats.empty()) {
-        globalLogFile << "\n--- Connections by Client ---\n";
-        for (const auto& item : currentLogConnectionStats) {
-            globalLogFile << "  [" << item.first << "] : " << item.second << " session(s)\n";
-        }
-    }
-
-    // 3. Kernel 统计
-    globalLogFile << "\n--- Kernel Execution Statistics ---\n";
-    if (currentLogKernelStats.empty()) {
-        globalLogFile << "No kernels recorded.\n";
-    } else {
-        using PairType = std::pair<std::string, long long>;
-        std::vector<PairType> sortedStats(currentLogKernelStats.begin(), currentLogKernelStats.end());
-
-        // 按调用次数降序排列
-        std::sort(sortedStats.begin(), sortedStats.end(), 
-            [](const PairType& a, const PairType& b) {
-                return a.second > b.second;
-            });
-
-        globalLogFile << std::left << std::setw(50) << "Kernel Name" << " | " << "Count" << "\n";
-        globalLogFile << "---------------------------------------------------|--------\n";
-        
-        long long total = 0;
-        for (const auto& item : sortedStats) {
-            globalLogFile << std::left << std::setw(50) << item.first << " | " << item.second << "\n";
-            total += item.second;
-        }
-        globalLogFile << "---------------------------------------------------|--------\n";
-        globalLogFile << std::left << std::setw(50) << "TOTAL KERNEL CALLS" << " | " << total << "\n";
-    }
-    
-    globalLogFile << "=======================================================\n\n";
-    globalLogFile.flush();
-}
-
-Logger::~Logger() {
-    shutdown();
 }

@@ -4,44 +4,82 @@
 #include <mutex>
 #include <fstream>
 #include <unordered_map>
+#include <map>
+#include <memory>
 #include <atomic>
 #include <vector>
 
+class LogManager;
+
+/**
+ * @brief 负责单个 Session/Client 的日志写入和统计
+ * 每个客户端连接对应一个 Logger 实例
+ */
 class Logger {
 public:
-    static void initDir();
-    static Logger& instance(std::string unique_id = "");
-
-    void write(const std::string& message);
-    void recordKernelStat(const std::string& kernelType);
-    void recordConnectionStat(const std::string& clientKey);
-    long long incrementConnectionCount();
-    
-    void shutdown();
-
-private:
-    Logger() = default;
-    ~Logger();
-    
-    void openLogFile(const std::string& unique_id);
-    void flushStatsToLog();
-    static std::string getSessionDirectory();
-    static std::string getCurrentTimeStr();
-
-    static std::mutex registryMutex;
-    static std::unordered_map<std::string, Logger*> loggerMap;
-    static std::string sessionDirectory;
-
-    std::string loggerId;
-    std::ofstream globalLogFile;
-    std::mutex logMutex;
-    
-    std::mutex statsMutex;
-    std::unordered_map<std::string, long long> currentLogKernelStats;
-    std::unordered_map<std::string, long long> currentLogConnectionStats;
-    std::atomic<long long> connectionCount{0};
-    
-    // 禁止拷贝
+    // 禁止默认构造和拷贝，强制通过 Manager 创建
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
+    ~Logger();
+
+    // 核心功能
+    void write(const std::string& message);
+    void recordKernelStat(const std::string& kernelType);
+    
+    // 显式关闭，通常由 Manager 调用，或者析构时自动调用
+    void finalize();
+
+private:
+    // 仅允许 LogManager 创建 Logger 实例
+    friend class LogManager;
+    Logger(const std::string& id, const std::string& dirPath);
+
+private:
+    const std::string id_;
+    const std::string dirPath_;
+    std::ofstream fileStream_;
+    std::mutex opMutex_;
+    bool isClosed_ = false;
+
+    // 统计数据
+    std::map<std::string, long long> kernelStats_;
+};
+
+/**
+ * @brief 全局日志管理器 (单例)
+ * 负责目录创建逻辑 (0->1) 和 Logger 生命周期的管理
+ */
+class LogManager {
+public:
+    static LogManager& instance();
+
+    // 获取或创建一个指定 ID 的 Logger
+    // 如果这是第一个连接，会自动初始化目录
+    std::shared_ptr<Logger> getLogger(const std::string& unique_id);
+
+    // 当客户端断开连接时调用，触发统计写入并释放资源
+    void removeLogger(const std::string& unique_id);
+
+    std::string getSessionDir() const;
+
+    void sessionIdIncrement() {
+        sessionId_++;
+    }
+
+    long long getSessionId() const {
+        return sessionId_.load();
+    }
+
+private:
+    LogManager() = default;
+    ~LogManager(); // 析构时会关闭所有剩余 Logger
+
+    void initDirectory();
+    std::string generateTimeStr();
+
+private:
+    mutable std::mutex managerMutex_;
+    std::unordered_map<std::string, std::shared_ptr<Logger>> activeLoggers_;
+    std::string currentSessionDir_;
+    std::atomic<long long> sessionId_{0};
 };

@@ -20,9 +20,6 @@ int main() {
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
 
-    // 初始化日志目录
-    Logger::initDir();
-
     // 初始化核心调度器
     Scheduler scheduler;
 
@@ -47,7 +44,6 @@ int main() {
     std::cout << "[Main] Stopping services..." << std::endl;
     ipcServer.stop();
     scheduler.stop();
-    Logger::instance().shutdown();
 
     std::cout << "[Main] Bye." << std::endl;
     return 0;

@@ -1,6 +1,8 @@
 #pragma once
+
 #include "ipc.h"
 #include "config.h"
+
 #include <atomic>
 #include <thread>
 #include <vector>
