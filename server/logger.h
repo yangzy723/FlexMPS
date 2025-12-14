@@ -25,6 +25,8 @@ public:
     // 核心功能
     void write(const std::string& message);
     void recordKernelStat(const std::string& kernelType);
+    void kernelIdIncrement();
+    long long getKernelId() const;
     
     // 显式关闭，通常由 Manager 调用，或者析构时自动调用
     void finalize();
@@ -40,6 +42,7 @@ private:
     std::ofstream fileStream_;
     std::mutex opMutex_;
     bool isClosed_ = false;
+    std::atomic<long long> kernelId{0};
 
     // 统计数据
     std::map<std::string, long long> kernelStats_;
@@ -57,18 +60,11 @@ public:
     // 如果这是第一个连接，会自动初始化目录
     std::shared_ptr<Logger> getLogger(const std::string& unique_id);
 
+    void sessionIdIncrement();
+    long long getSessionId();
+
     // 当客户端断开连接时调用，触发统计写入并释放资源
     void removeLogger(const std::string& unique_id);
-
-    std::string getSessionDir() const;
-
-    void sessionIdIncrement() {
-        sessionId_++;
-    }
-
-    long long getSessionId() const {
-        return sessionId_.load();
-    }
 
 private:
     LogManager() = default;

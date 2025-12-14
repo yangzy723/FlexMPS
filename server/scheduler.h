@@ -25,7 +25,6 @@ private:
     
     // 业务逻辑
     std::pair<bool, std::string> makeDecision(const std::string& kernelType);
-    std::atomic<long long> globalKernelId{0};
 
     // 线程管理
     std::atomic<bool> running{true};

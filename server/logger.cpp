@@ -44,6 +44,14 @@ void Logger::recordKernelStat(const std::string& kernelType) {
     kernelStats_[kernelType]++;
 }
 
+void Logger::kernelIdIncrement() {
+    kernelId.fetch_add(1);
+}
+
+long long Logger::getKernelId() const {
+    return kernelId.load();
+}
+
 void Logger::finalize() {
     std::lock_guard<std::mutex> lock(opMutex_);
     
@@ -114,6 +122,16 @@ std::shared_ptr<Logger> LogManager::getLogger(const std::string& unique_id) {
     return newLogger;
 }
 
+void LogManager::sessionIdIncrement() {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+    sessionId_++;
+}
+
+long long LogManager::getSessionId() {
+    std::lock_guard<std::mutex> lock(managerMutex_);
+    return sessionId_.load();
+}
+
 void LogManager::removeLogger(const std::string& unique_id) {
     std::lock_guard<std::mutex> lock(managerMutex_);
     
@@ -148,11 +166,6 @@ void LogManager::initDirectory() {
 #else
     mkdir(currentSessionDir_.c_str(), 0777);
 #endif
-}
-
-std::string LogManager::getSessionDir() const {
-    std::lock_guard<std::mutex> lock(managerMutex_);
-    return currentSessionDir_;
 }
 
 std::string LogManager::generateTimeStr() {

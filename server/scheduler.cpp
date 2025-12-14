@@ -30,7 +30,6 @@ std::pair<bool, std::string> Scheduler::makeDecision(const std::string& kernelTy
     return {true, "OK"};
 }
 
-// 辅助函数：分割字符串
 std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
@@ -84,11 +83,12 @@ void Scheduler::clientHandler(std::unique_ptr<IChannel> channel) {
             the_unique_id = unique_id;
         }
 
-        long long currentId = ++globalKernelId;
+        LogManager::instance().getLogger(unique_id)->kernelIdIncrement();
+        long long kernelId = LogManager::instance().getLogger(unique_id)->getKernelId();
         LogManager::instance().getLogger(unique_id)->recordKernelStat(kernelType);
 
         ss.str("");
-        ss << "Kernel " << currentId << ": " << kernelType << " from " << client_id;
+        ss << "Kernel " << kernelId << ": " << kernelType << " from " << client_id;
         LogManager::instance().getLogger(unique_id)->write(ss.str());
 
         // 决策
