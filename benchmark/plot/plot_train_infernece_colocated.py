@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.patches as mpatches
 
-# ========== 1. 全局出版级样式设置 ==========
+# ========== 全局样式 ==========
 # 统一使用 Serif 字体，匹配 ACM/IEEE 论文排版
 plt.rcParams['font.family'] = 'serif'
-# 设置更高分辨率，确保 PDF 矢量图的清晰度
 plt.rcParams['figure.dpi'] = 300 
-plt.rcParams['axes.linewidth'] = 1.0 # 坐标轴线宽
+plt.rcParams['axes.linewidth'] = 1.0
 
-# ========== 2. 数据定义 ==========
+# ========== 数据定义 ==========
 categories = ['A', 'B', '1', '2']
-systems = ['Temporal', 'MPS', 'MIG', 'Orion', 'LithOS', 'CoGPU']
+
+# 严格对齐顺序 (Temporal, MIG, MPS, Orion, LithOS, CoGPU)
+systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'LithOS', 'CoGPU']
 
 throughput_data = {
     'Temporal': [0.44, 0.40, 0.42, 0.43],
@@ -31,23 +31,23 @@ latency_data = {
     'CoGPU':    [4.5, 5.9, 7.2, 8.0]
 }
 
-# 颜色和纹理配置（保留了柔和高级的配色方案）
-colors = ['#d9d9d9', '#c4b5db', '#f5c687', '#9dc3e6', '#a9d18e', '#f44336']
-hatches = ['', '///', '\\\\\\', 'xxx', '...', '']
+# 严格对齐颜色与纹理
+colors = ['#d9d9d9', '#f5c687', '#c4b5db', '#9dc3e6', '#a9d18e', '#f44336']
+hatches = ['', '\\\\', '//', 'xx', '..', '']
 
 x = np.arange(len(categories))
 width = 0.12
 
 # 调整画布大小，使其更适合双栏横跨布局
-fig, axes = plt.subplots(2, 1, figsize=(10, 7.2)) # 稍微增加了一点总高度以容纳更大的字体
+fig, axes = plt.subplots(2, 1, figsize=(10, 7.2))
 
-# ========== 3. 核心绘制逻辑 ==========
+# ========== 核心绘制逻辑 ==========
 def draw_bars(ax, data_dict, is_throughput):
     for i, sys in enumerate(systems):
         pos = x + (i - 2.5) * width 
         
         if sys == 'LithOS':
-            # LithOS：幽灵虚线框，强调没有 Semantic Determinism 保证
+            # LithOS：幽灵虚线框，强调没有 Determinism 保证
             bars = ax.bar(pos, data_dict[sys], width, label=sys,
                           facecolor='none',          
                           edgecolor=colors[i],       
@@ -58,7 +58,7 @@ def draw_bars(ax, data_dict, is_throughput):
             # 常规系统与 CoGPU
             bars = ax.bar(pos, data_dict[sys], width, label=sys,
                           color=colors[i], 
-                          edgecolor='black', # 锐利的黑色边框
+                          edgecolor='black', 
                           linestyle='-', 
                           linewidth=0.75, 
                           hatch=hatches[i])
@@ -71,69 +71,59 @@ def draw_bars(ax, data_dict, is_throughput):
             if sys == 'LithOS':
                 label_text += '*'
                 
-            # 全面调大数值标签：字号调大为 12
             ax.annotate(label_text,
                          xy=(bar.get_x() + bar.get_width() / 2, height),
-                         xytext=(0, 4), # 距离柱子顶部 4 个像素
+                         xytext=(0, 4), 
                          textcoords="offset points",
                          ha='center', va='bottom', rotation=90,
-                         fontweight='bold', fontsize=12, color='#222222')
+                         fontweight='bold', fontsize=13, color='#222222')
 
 # 执行绘制
 draw_bars(axes[0], throughput_data, is_throughput=True)
 draw_bars(axes[1], latency_data, is_throughput=False)
 
-# ========== 4. 坐标轴与背景美化 ==========
+# ========== 坐标轴与背景 ==========
 def format_axis(ax, ylabel, title, ymax):
-    # 放大Y轴标签
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
-    # 放大标题，增加 padding 避免与上面的图例或数字太挤
     ax.set_title(title, fontsize=15, fontweight='bold', loc='left', pad=14)
     
     ax.set_xticks(x)
-    # 放大X轴类别刻度
     ax.set_xticklabels(categories, fontsize=14, fontweight='bold')
     
-    # Y轴留出额外 30% 的空间给变大后的数值标签 (原为 25%)
     ax.set_ylim(0, ymax * 1.30) 
-    # 放大Y轴数字刻度
     ax.tick_params(axis='y', labelsize=13)
     
-    # 极简网格线：只保留Y轴虚线网格，并将层级放到底部 (zorder=0)
     ax.yaxis.grid(True, linestyle='--', color='#cccccc', alpha=0.7, zorder=0)
     ax.set_axisbelow(True) 
     
-    # 移除顶部和右侧的边框 (Despine)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
 format_axis(axes[0], 'Normalized Throughput', '(a) DNN Training Job Performance (Higher is better)', 0.6)
 format_axis(axes[1], 'p99 Latency (s)', '(b) LLM Inference Job Performance (Lower is better)', 19.0)
+axes[1].set_xlabel('Configuration Group', fontsize=16, fontweight='bold', labelpad=10)
 
-# ========== 5. 图例的完美重构 ==========
+# ========== 图例 ==========
 handles, labels = axes[0].get_legend_handles_labels()
 
-# 修改 LithOS 标签
 for i in range(len(labels)):
     if labels[i] == 'LithOS':
-        labels[i] = 'LithOS (No Semantic Determinism Guarantee)'
+        labels[i] = 'LithOS (No Determinism Guarantee)'
 
-# 图例左对齐，整体字号放大为 13.5
 fig.legend(handles, labels, 
-           loc='lower left', 
-           bbox_to_anchor=(0.06, 0.95), 
+           loc='lower center', 
+           bbox_to_anchor=(0.5, 0.95), 
            ncol=3, 
            frameon=False, 
            fontsize=13.5, 
            handlelength=2.5, 
            handleheight=1.2,
-           columnspacing=1.8) # 略微缩减列间距以确保 3 列不会超出右侧边界
+           columnspacing=2.0)
 
 # 调整子图布局
 plt.tight_layout()
-# 增大 hspace 为 0.5，防止图(a)底部数字和图(b)的标题打架；top 下调至 0.86 给大图例让路
 plt.subplots_adjust(top=0.86, hspace=0.5) 
 
-# 导出为无损 PDF，bbox_inches='tight' 裁剪多余白边
-plt.savefig('DNNTraining_with_LLMInference_LargeFont.pdf', bbox_inches='tight', format='pdf')
-# plt.show()
+# 导出为无损 PDF
+plt.savefig('DNNTraining_with_LLMInference.pdf', bbox_inches='tight', format='pdf')
+plt.show()
