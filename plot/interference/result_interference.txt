@@ -1,0 +1,46 @@
+(cogpu) yzy@klss:~/CoGPU/CoGPU_test/determinism_performance$ python inference_worker.py 
+[Inference] 加载模型 /data/datasets/models-hf/Qwen3-32B ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards: 100%|███████████████████████████████████████████████████████████████| 17/17 [05:04<00:00, 17.93s/it]
+[Inference] 构造 512 Tokens 的输入上下文...
+[Inference] 开始预热...
+[Inference] 开始正式测试 (10 次请求, Prefill=512)...
+  -> 请求 1: TTFT = 90.18 ms | TPOT = 50.92 ms
+  -> 请求 2: TTFT = 87.49 ms | TPOT = 50.79 ms
+  -> 请求 3: TTFT = 87.75 ms | TPOT = 51.54 ms
+  -> 请求 4: TTFT = 88.01 ms | TPOT = 51.90 ms
+  -> 请求 5: TTFT = 87.71 ms | TPOT = 50.94 ms
+  -> 请求 6: TTFT = 87.18 ms | TPOT = 49.88 ms
+  -> 请求 7: TTFT = 87.76 ms | TPOT = 50.81 ms
+  -> 请求 8: TTFT = 88.30 ms | TPOT = 37.74 ms
+  -> 请求 9: TTFT = 87.85 ms | TPOT = 50.96 ms
+  -> 请求 10: TTFT = 84.74 ms | TPOT = 50.58 ms
+
+==================================================
+[Inference] 实验结果汇总 (Prefill Length = 512)
+P99 TTFT (首字延迟): 90.01 ms
+P99 TPOT (单字延迟): 51.87 ms
+==================================================
+(cogpu) yzy@klss:~/CoGPU/CoGPU_test/determinism_performance$ python inference_worker.py 
+[Inference] 加载模型 /data/datasets/models-hf/Qwen3-32B ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards: 100%|███████████████████████████████████████████████████████████████| 17/17 [00:18<00:00,  1.09s/it]
+[Inference] 构造 512 Tokens 的输入上下文...
+[Inference] 开始预热...
+[Inference] 开始正式测试 (10 次请求, Prefill=512)...
+  -> 请求 1: TTFT = 6496.94 ms | TPOT = 1959.27 ms
+  -> 请求 2: TTFT = 6434.99 ms | TPOT = 1954.75 ms
+  -> 请求 3: TTFT = 6422.77 ms | TPOT = 1959.56 ms
+  -> 请求 4: TTFT = 6419.13 ms | TPOT = 1962.27 ms
+  -> 请求 5: TTFT = 6416.79 ms | TPOT = 1954.20 ms
+  -> 请求 6: TTFT = 6418.50 ms | TPOT = 1961.45 ms
+  -> 请求 7: TTFT = 6416.59 ms | TPOT = 1964.39 ms
+  -> 请求 8: TTFT = 6427.60 ms | TPOT = 1968.06 ms
+  -> 请求 9: TTFT = 6409.17 ms | TPOT = 1959.95 ms
+  -> 请求 10: TTFT = 6405.33 ms | TPOT = 1964.95 ms
+
+==================================================
+[Inference] 实验结果汇总 (Prefill Length = 512)
+P99 TTFT (首字延迟): 6491.36 ms
+P99 TPOT (单字延迟): 1967.78 ms
+==================================================
