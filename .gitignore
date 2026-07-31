@@ -5,9 +5,12 @@ test.sh
 *.log
 *.json
 *.csv
+!eval/operator_determinism/reduction.csv
+!eval/operator_determinism/splitk_gemm.csv
 *.nsys-rep
 *.o
 *.pdf
+/eval/operator_determinism/operator_determinism_distribution.png
 scheduler_service
 
 /CoGPU-test
