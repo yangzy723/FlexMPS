@@ -18,7 +18,7 @@ job1_throughput = {
     'Salus':     [0.51, 0.58, 0.54, 0.52, 0.88, 0.68, 0.78],
     'MPS':       [0.55, 0.54, 0.55, 0.54, 0.89, 0.76, 0.67],
     'MIG':       [0.53, 0.52, 0.53, 0.52, 0.91, 0.91, 0.93],
-    'CoGPU':     [0.55, 0.55, 0.58, 0.60, 0.99, 0.92, 0.95]
+    'PROTEUS':     [0.55, 0.55, 0.58, 0.60, 0.99, 0.92, 0.95]
 }
 
 # Job 2 数据
@@ -30,10 +30,10 @@ job2_throughput = {
     'Salus':     [0.49, 0.49, 0.56, 0.50, 0.86, 0.68, 0.75],
     'MPS':       [0.55, 0.54, 0.51, 0.51, 0.89, 0.68, 0.67],
     'MIG':       [0.53, 0.52, 0.53, 0.50, 0.91, 0.52, 0.93],
-    'CoGPU':     [0.55, 0.56, 0.58, 0.54, 0.99, 0.88, 0.95]
+    'PROTEUS':     [0.55, 0.56, 0.58, 0.54, 0.99, 0.88, 0.95]
 }
 
-plot_systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'Salus', 'CoGPU']
+plot_systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'Salus', 'PROTEUS']
 colors = ['#d9d9d9', '#f5c687', '#c4b5db', '#9dc3e6', '#a9d18e', '#f44336']
 hatches = ['', '\\\\\\', '///', 'xxx', '...', '|||']
 
@@ -73,7 +73,7 @@ ax.set_ylabel('Total Normalized Throughput', fontsize=14, fontweight='bold')
 ax.set_xlabel('Configuration Group', fontsize=14, fontweight='bold', labelpad=10)
 
 ax.set_xticks(x)
-ax.set_xticklabels(categories, fontsize=14, fontweight='bold')
+ax.set_xticklabels(categories, fontsize=14, fontweight='normal')
 
 ax.set_ylim(0, 2.5)
 ax.tick_params(axis='y', labelsize=12)

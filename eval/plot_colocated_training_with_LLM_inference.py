@@ -10,8 +10,8 @@ plt.rcParams['axes.linewidth'] = 1.0
 # ========== 数据定义 ==========
 categories = ['A', 'B', '1', '2']
 
-# 严格对齐顺序 (Temporal, MIG, MPS, Orion, LithOS, CoGPU)
-systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'LithOS', 'CoGPU']
+# 严格对齐顺序 (Temporal, MIG, MPS, Orion, LithOS, PROTEUS)
+systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'LithOS', 'PROTEUS']
 
 throughput_data = {
     'Temporal': [0.44, 0.40, 0.42, 0.43],
@@ -19,7 +19,7 @@ throughput_data = {
     'MIG':      [0.50, 0.50, 0.53, 0.50],
     'Orion':    [0.50, 0.55, 0.53, 0.51],
     'LithOS':   [0.53, 0.53, 0.58, 0.54],
-    'CoGPU':    [0.55, 0.55, 0.60, 0.60]
+    'PROTEUS':    [0.55, 0.55, 0.60, 0.60]
 }
 
 latency_data = {
@@ -28,7 +28,7 @@ latency_data = {
     'MIG':      [10.0, 12.0, 10.0, 12.0],
     'Orion':    [12.0, 15.0, 15.0, 19.0],
     'LithOS':   [5.3, 6.5, 7.6, 8.2],
-    'CoGPU':    [4.5, 5.9, 7.2, 8.0]
+    'PROTEUS':    [4.5, 5.9, 7.2, 8.0]
 }
 
 # 严格对齐颜色与纹理
@@ -39,7 +39,7 @@ x = np.arange(len(categories))
 width = 0.12
 
 # 调整画布大小，使其更适合双栏横跨布局
-fig, axes = plt.subplots(2, 1, figsize=(10, 7.2))
+fig, axes = plt.subplots(2, 1, figsize=(10, 6.9))
 
 # ========== 核心绘制逻辑 ==========
 def draw_bars(ax, data_dict, is_throughput):
@@ -55,7 +55,7 @@ def draw_bars(ax, data_dict, is_throughput):
                           linewidth=1.5,             
                           hatch=hatches[i])          
         else:
-            # 常规系统与 CoGPU
+            # 常规系统与 PROTEUS
             bars = ax.bar(pos, data_dict[sys], width, label=sys,
                           color=colors[i], 
                           edgecolor='black', 
@@ -85,10 +85,10 @@ draw_bars(axes[1], latency_data, is_throughput=False)
 # ========== 坐标轴与背景 ==========
 def format_axis(ax, ylabel, title, ymax):
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
-    ax.set_title(title, fontsize=15, fontweight='bold', loc='left', pad=14)
+    ax.set_title(title, fontsize=15, fontweight='bold', loc='left', pad=10)
     
     ax.set_xticks(x)
-    ax.set_xticklabels(categories, fontsize=14, fontweight='bold')
+    ax.set_xticklabels(categories, fontsize=14, fontweight='normal')
     
     ax.set_ylim(0, ymax * 1.30) 
     ax.tick_params(axis='y', labelsize=13)
@@ -101,7 +101,8 @@ def format_axis(ax, ylabel, title, ymax):
 
 format_axis(axes[0], 'Normalized Throughput', '(a) DNN Training Job Performance (Higher is better)', 0.6)
 format_axis(axes[1], 'p99 Latency (s)', '(b) LLM Inference Job Performance (Lower is better)', 19.0)
-axes[1].set_xlabel('Configuration Group', fontsize=16, fontweight='bold', labelpad=10)
+axes[0].tick_params(axis='x', labelbottom=False)
+axes[1].set_xlabel('Configuration Group', fontsize=16, fontweight='bold', labelpad=8)
 
 # ========== 图例 ==========
 handles, labels = axes[0].get_legend_handles_labels()
@@ -111,18 +112,17 @@ for i in range(len(labels)):
         labels[i] = 'LithOS (No Determinism Guarantee)'
 
 fig.legend(handles, labels, 
-           loc='lower center', 
-           bbox_to_anchor=(0.5, 0.95), 
+           loc='upper center', 
+           bbox_to_anchor=(0.5, 0.985), 
            ncol=3, 
            frameon=False, 
-           fontsize=13.5, 
+           fontsize=14.5, 
            handlelength=2.5, 
            handleheight=1.2,
            columnspacing=2.0)
 
-# 调整子图布局
-plt.tight_layout()
-plt.subplots_adjust(top=0.86, hspace=0.5) 
+# 调整子图布局：顶部刻度仅在底部 panel 显示，避免与 (b) 标题冲突
+fig.subplots_adjust(left=0.105, right=0.985, bottom=0.11, top=0.80, hspace=0.36) 
 
 # 导出为无损 PDF
 plt.savefig('colocated_training_with_LLM_inference.pdf', bbox_inches='tight', format='pdf')
