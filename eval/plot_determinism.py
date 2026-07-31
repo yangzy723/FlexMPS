@@ -1,113 +1,203 @@
-import torch
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import os
+from matplotlib.lines import Line2D
+from matplotlib.ticker import ScalarFormatter
+import torch
 
-def main():
-    data_path = 'determinism/determinism_data.pt'
-    
-    if not os.path.exists(data_path):
-        print(f"Error: {data_path} not found.")
-        return
 
-    data = torch.load(data_path, map_location='cpu')
-    
-    NUM_TRIALS = data["NUM_TRIALS"]
-    drift_both_logits = data["drift_both_logits"]
-    drift_both_probs = data["drift_both_probs"]
-    drift_bs_only_logits = data["drift_bs_only_logits"]
-    drift_bs_only_probs = data["drift_bs_only_probs"]
-    
-    flip_both_count = data.get("flip_both_count", 0)
-    flip_bs_only_count = data.get("flip_bs_only_count", 0)
-    flip_both_indices = data.get("flip_both_indices", [])
+ROOT = Path(__file__).resolve().parent
+DATA_PATH = ROOT / "determinism" / "determinism_data.pt"
+OUTPUT_PATH = ROOT / "determinism.pdf"
 
+RESHAPING_COLOR = "#1f77b4"
+PROTEUS_COLOR = "#d62728"
+FLIP_COLOR = "#ff7f0e"
+ZERO_COLOR = "gray"
+
+LINE_WIDTH = 2.0
+MARKER_SIZE = 10
+FLIP_MARKER_SIZE = 180
+
+
+def configure_style() -> None:
     plt.rcParams.update({
         "font.family": "serif",
-        "font.serif": ["Times New Roman", "DejaVu Serif", "Liberation Serif"], 
+        "font.serif": ["Times New Roman", "DejaVu Serif", "Liberation Serif"],
         "font.size": 32,
         "axes.labelsize": 36,
         "axes.labelweight": "bold",
         "xtick.labelsize": 32,
         "ytick.labelsize": 32,
-        'axes.grid': True,
-        'grid.alpha': 0.5,
-        'grid.linestyle': '--',
-        'hatch.linewidth': 1.0,
-        'figure.dpi': 300
+        "axes.grid": True,
+        "grid.alpha": 0.5,
+        "grid.linestyle": "--",
+        "figure.dpi": 300,
     })
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 11.2), sharex=True)
-    
-    color_baseline = '#d62728' 
-    color_proteus = '#1f77b4'
-    color_flip = '#ff7f0e'
 
-    line_w = 2.0
-    marker_s = 12
-    flip_marker_s = 350
+def draw_stage(
+    ax: plt.Axes,
+    reshaping_drift,
+    proteus_drift,
+    flip_indices,
+    title: str,
+) -> None:
+    trials = range(len(reshaping_drift))
 
-    # ==========================================
-    # 子图 1: Logits
-    # ==========================================
-    ax1.axhline(0, color='gray', linewidth=4.0, linestyle='--', alpha=0.7, zorder=1)
-    ax1.plot(range(NUM_TRIALS), drift_bs_only_logits, color=color_proteus, alpha=0.9, marker='s', markersize=marker_s, linewidth=line_w, zorder=2)
-    ax1.plot(range(NUM_TRIALS), drift_both_logits, color=color_baseline, alpha=0.85, marker='o', markersize=marker_s, linewidth=line_w, zorder=3)
+    ax.axhline(
+        0,
+        color=ZERO_COLOR,
+        linewidth=4.0,
+        linestyle="--",
+        alpha=0.7,
+        zorder=1,
+    )
+    ax.plot(
+        trials,
+        proteus_drift,
+        color=PROTEUS_COLOR,
+        alpha=0.9,
+        marker="s",
+        markersize=MARKER_SIZE,
+        linewidth=LINE_WIDTH,
+        zorder=2,
+    )
+    ax.plot(
+        trials,
+        reshaping_drift,
+        color=RESHAPING_COLOR,
+        alpha=0.85,
+        marker="o",
+        markersize=MARKER_SIZE,
+        linewidth=LINE_WIDTH,
+        zorder=3,
+    )
 
-    if flip_both_indices:
-        flip_logits_values = [drift_both_logits[i] for i in flip_both_indices]
-        ax1.scatter(flip_both_indices, flip_logits_values, marker='X', s=flip_marker_s, color=color_flip, edgecolor='black', linewidth=1.5, zorder=5)
-        for idx in flip_both_indices:
-            ax1.axvspan(idx - 0.5, idx + 0.5, color=color_flip, alpha=0.15, zorder=0)
-    
-    ax1.set_title('Stage 1: LM Head MatMul Logit Drift', fontsize=36, fontweight='bold', pad=10)
-    ax1.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-    ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    if flip_indices:
+        flip_values = [reshaping_drift[index] for index in flip_indices]
+        ax.scatter(
+            flip_indices,
+            flip_values,
+            marker="X",
+            s=FLIP_MARKER_SIZE,
+            color=FLIP_COLOR,
+            edgecolor="black",
+            linewidth=1.5,
+            zorder=5,
+        )
+        for index in flip_indices:
+            ax.axvspan(
+                index - 0.5,
+                index + 0.5,
+                color=FLIP_COLOR,
+                alpha=0.15,
+                zorder=0,
+            )
 
-    # ==========================================
-    # 子图 2: Probs
-    # ==========================================
-    ax2.axhline(0, color='gray', linewidth=4.0, linestyle='--', alpha=0.7, zorder=1)
-    ax2.plot(range(NUM_TRIALS), drift_bs_only_probs, color=color_proteus, alpha=0.9, marker='s', markersize=marker_s, linewidth=line_w, zorder=2)
-    ax2.plot(range(NUM_TRIALS), drift_both_probs, color=color_baseline, alpha=0.85, marker='o', markersize=marker_s, linewidth=line_w, zorder=3)
+    ax.set_title(title, fontsize=40, fontweight="bold", pad=12)
+    ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
 
-    if flip_both_indices:
-        flip_probs_values = [drift_both_probs[i] for i in flip_both_indices]
-        ax2.scatter(flip_both_indices, flip_probs_values, marker='X', s=flip_marker_s, color=color_flip, edgecolor='black', linewidth=1.5, zorder=5)
-        for idx in flip_both_indices:
-            ax2.axvspan(idx - 0.5, idx + 0.5, color=color_flip, alpha=0.15, zorder=0)
 
-    ax2.set_title('Stage 2: Softmax Probability Drift', fontsize=36, fontweight='bold', pad=10)
-    
-    ax2.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-
-    fig.supylabel('Max Absolute Drift', fontweight='bold', fontsize=32, x=0.04)
-
-    # ==========================================
-    # 图例处理
-    # ==========================================
-    label_baseline = f"Baseline"
-    label_proteus = "PROTEUS"
-    label_zero = "Absolute Determinism"
-    label_flip = f"Argmax Flip Occurred ({flip_both_count} times)"
-
-    from matplotlib.lines import Line2D
-    custom_lines = [
-        Line2D([0], [0], color=color_baseline, lw=line_w, marker='o', markersize=16), 
-        Line2D([0], [0], color=color_proteus, lw=line_w, marker='s', markersize=16),
-        Line2D([0], [0], color='gray', lw=4.0, linestyle='--', alpha=0.7),
-        Line2D([0], [0], marker='X', color='w', markerfacecolor=color_flip, markeredgecolor='black', markersize=20, markeredgewidth=1.5)
+def build_legend_handles() -> list[Line2D]:
+    return [
+        Line2D(
+            [0],
+            [0],
+            color=RESHAPING_COLOR,
+            linewidth=LINE_WIDTH,
+            marker="o",
+            markersize=16,
+            label="Kernel Reshaping",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=PROTEUS_COLOR,
+            linewidth=LINE_WIDTH,
+            marker="s",
+            markersize=16,
+            label="PROTEUS",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color=ZERO_COLOR,
+            linewidth=4.0,
+            linestyle="--",
+            alpha=0.7,
+            label="Absolute Determinism",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="white",
+            marker="X",
+            markerfacecolor=FLIP_COLOR,
+            markeredgecolor="black",
+            markersize=20,
+            markeredgewidth=1.5,
+            label="Argmax Flip Occurred",
+        ),
     ]
-    
-    fig.subplots_adjust(left=0.072, right=0.997, bottom=0.21, top=0.96, hspace=0.18) 
-    
-    fig.legend(custom_lines, [label_baseline, label_proteus, label_zero, label_flip], 
-               loc='upper center', ncol=4, bbox_to_anchor=(0.5, 0.105), 
-               frameon=False, fontsize=36, handlelength=1.8, handletextpad=0.3, borderpad=0, columnspacing=1.2)
 
-    plt.savefig('determinism.pdf', format='pdf', bbox_inches='tight') 
-    print("\n=== Academic Plots Saved Successfully ===")
+
+def main() -> None:
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(f"Determinism data not found: {DATA_PATH}")
+
+    data = torch.load(DATA_PATH, map_location="cpu")
+    flip_indices = [int(index) for index in data.get("flip_both_indices", [])]
+
+    configure_style()
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 11.2), sharex=True)
+
+    draw_stage(
+        ax1,
+        data["drift_both_logits"],
+        data["drift_bs_only_logits"],
+        flip_indices,
+        "Stage 1: LM Head MatMul Logit Drift",
+    )
+    draw_stage(
+        ax2,
+        data["drift_both_probs"],
+        data["drift_bs_only_probs"],
+        flip_indices,
+        "Stage 2: Softmax Probability Drift",
+    )
+
+    fig.supylabel(
+        "Max Absolute Drift",
+        fontweight="bold",
+        fontsize=36,
+        x=0.018,
+    )
+    fig.subplots_adjust(
+        left=0.085,
+        right=0.997,
+        bottom=0.14,
+        top=0.95,
+        hspace=0.18,
+    )
+    fig.legend(
+        handles=build_legend_handles(),
+        loc="upper center",
+        ncol=4,
+        bbox_to_anchor=(0.5, 0.105),
+        frameon=False,
+        fontsize=44,
+        handlelength=1.5,
+        handletextpad=0.2,
+        borderpad=0.2,
+        columnspacing=0.7,
+    )
+
+    fig.savefig(OUTPUT_PATH, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved determinism plot to {OUTPUT_PATH}")
+
 
 if __name__ == "__main__":
     main()
