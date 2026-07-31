@@ -177,20 +177,22 @@ def main() -> None:
     fig.subplots_adjust(
         left=0.085,
         right=0.997,
-        bottom=0.14,
-        top=0.95,
+        bottom=0.075,
+        top=0.825,
         hspace=0.18,
     )
     fig.legend(
         handles=build_legend_handles(),
-        loc="upper center",
+        loc="upper left",
         ncol=4,
-        bbox_to_anchor=(0.5, 0.105),
+        bbox_to_anchor=(0.085, 0.935, 0.912, 0.06),
+        mode="expand",
         frameon=False,
-        fontsize=44,
-        handlelength=1.5,
+        fontsize=34,
+        handlelength=1.25,
         handletextpad=0.2,
-        borderpad=0.2,
+        borderpad=0.0,
+        borderaxespad=0.0,
         columnspacing=0.7,
     )
 
