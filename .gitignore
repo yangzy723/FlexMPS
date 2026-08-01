@@ -14,3 +14,7 @@ test.sh
 scheduler_service
 
 /CoGPU-test
+
+!eval/overhead/*.csv
+__pycache__/
+*.pyc

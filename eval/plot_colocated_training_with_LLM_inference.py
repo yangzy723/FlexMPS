@@ -8,7 +8,7 @@ plt.rcParams['figure.dpi'] = 300
 plt.rcParams['axes.linewidth'] = 1.0
 
 # ========== 数据定义 ==========
-categories = ['A', 'B', '1', '2']
+categories = ['1', '2', '3', '4']
 
 # 严格对齐顺序 (Temporal, MIG, MPS, Orion, LithOS, PROTEUS)
 systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'LithOS', 'PROTEUS']

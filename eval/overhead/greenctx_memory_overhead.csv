@@ -1,0 +1,10 @@
+scenario,statistic,context_type,context_count,level,sm_count,gpu_baseline_mib,gpu_after_init_mib,gpu_resident_mib,gpu_increment_from_empty_mib,gpu_increment_from_previous_mib,rss_baseline_mib,rss_after_init_mib,rss_resident_mib,rss_increment_from_empty_mib,rss_increment_from_previous_mib,notes
+greenctx_pool_127,resident_total,GreenCtx,127,,,0,4,1163,1163,,13.578125,19.882813,331.714844,318.136719,,All 127 contexts retained; shared device resource descriptor; after destroy GPU memory 4 MiB
+greenctx_exponential_level_1,resident_after_level,GreenCtx,127,1,,0,4,533,533,529,13.578125,19.882813,117.8125,104.234375,97.929688,Cumulative resident memory after retaining 1 GreenCtx contexts
+greenctx_exponential_level_2,resident_after_level,GreenCtx,127,2,,0,4,537,537,4,13.578125,19.882813,119.402344,105.824219,1.589844,Cumulative resident memory after retaining 2 GreenCtx contexts
+greenctx_exponential_level_3,resident_after_level,GreenCtx,127,3,,0,4,547,547,10,13.578125,19.882813,122.605469,109.027344,3.203125,Cumulative resident memory after retaining 4 GreenCtx contexts
+greenctx_exponential_level_4,resident_after_level,GreenCtx,127,4,,0,4,567,567,20,13.578125,19.882813,129.011719,115.433594,6.40625,Cumulative resident memory after retaining 8 GreenCtx contexts
+greenctx_exponential_level_5,resident_after_level,GreenCtx,127,5,,0,4,607,607,40,13.578125,19.882813,141.835938,128.257813,12.824219,Cumulative resident memory after retaining 16 GreenCtx contexts
+greenctx_exponential_level_6,resident_after_level,GreenCtx,127,6,,0,4,687,687,80,13.578125,19.882813,169.472656,155.894531,27.636719,Cumulative resident memory after retaining 32 GreenCtx contexts
+greenctx_exponential_level_7,resident_after_level,GreenCtx,127,7,,0,4,847,847,160,13.578125,19.882813,224.753906,211.175781,55.28125,Cumulative resident memory after retaining 64 GreenCtx contexts
+greenctx_exponential_level_8,resident_after_level,GreenCtx,127,8,,0,4,1163,1163,316,13.578125,19.882813,331.714844,318.136719,106.960938,Cumulative resident memory after retaining 127 GreenCtx contexts

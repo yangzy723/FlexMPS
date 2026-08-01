@@ -159,6 +159,7 @@ def main() -> None:
         draw_histogram(ax, values, title, bins)
 
     axes[0].set_ylabel("Trial Frequency (%)", fontsize=19, labelpad=8)
+    fig.supxlabel("Numerical Drift", fontsize=19, y=0.02)
     fig.legend(
         handles=build_legend_handles(),
         loc="upper center",
@@ -172,7 +173,7 @@ def main() -> None:
     fig.subplots_adjust(
         left=0.095,
         right=0.99,
-        bottom=0.15,
+        bottom=0.20,
         top=0.67,
         wspace=0.08,
     )

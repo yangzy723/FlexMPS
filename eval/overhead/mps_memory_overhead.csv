@@ -1,0 +1,10 @@
+scenario,statistic,context_type,context_count,level,sm_count,gpu_baseline_mib,gpu_after_init_mib,gpu_resident_mib,gpu_increment_from_empty_mib,gpu_increment_from_previous_mib,rss_baseline_mib,rss_after_init_mib,rss_resident_mib,rss_increment_from_empty_mib,rss_increment_from_previous_mib,notes
+mps_pool_8_hierarchy,resident_total,MPS,8,,,1,74,2534,2533,,13.671875,19.96875,565.464844,551.792969,,All eight hierarchy contexts retained; MPS server active; after context destroy GPU memory 75 MiB; after MPS shutdown 0 MiB
+mps_hierarchy_level_1,resident_after_level,MPS,8,1,16,1,74,167,166,93,13.671875,19.96875,94.023438,80.351563,74.054688,Cumulative resident memory after retaining this level
+mps_hierarchy_level_2,resident_after_level,MPS,8,2,33,1,74,326,325,159,13.671875,19.96875,161.574219,147.902344,67.550781,Cumulative resident memory after retaining this level
+mps_hierarchy_level_3,resident_after_level,MPS,8,3,50,1,74,545,544,219,13.671875,19.96875,228.808594,215.136719,67.234375,Cumulative resident memory after retaining this level
+mps_hierarchy_level_4,resident_after_level,MPS,8,4,66,1,74,822,821,277,13.671875,19.96875,296.085938,282.414063,67.277344,Cumulative resident memory after retaining this level
+mps_hierarchy_level_5,resident_after_level,MPS,8,5,82,1,74,1157,1156,335,13.671875,19.96875,363.378906,349.707031,67.292969,Cumulative resident memory after retaining this level
+mps_hierarchy_level_6,resident_after_level,MPS,8,6,99,1,74,1558,1557,401,13.671875,19.96875,430.714844,417.042969,67.335938,Cumulative resident memory after retaining this level
+mps_hierarchy_level_7,resident_after_level,MPS,8,7,116,1,74,2017,2016,459,13.671875,19.96875,498.078125,484.40625,67.363281,Cumulative resident memory after retaining this level
+mps_hierarchy_level_8,resident_after_level,MPS,8,8,132,1,74,2534,2533,517,13.671875,19.96875,565.464844,551.792969,67.386719,Cumulative resident memory after retaining this level
