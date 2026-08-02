@@ -178,6 +178,7 @@ def main() -> None:
         wspace=0.08,
     )
 
+    OUTPUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT_PNG, bbox_inches="tight")
     fig.savefig(OUTPUT_PDF, bbox_inches="tight")
     plt.close(fig)

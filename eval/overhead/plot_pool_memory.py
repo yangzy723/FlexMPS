@@ -95,6 +95,7 @@ def main():
                       fontweight="semibold")
 
     figure.subplots_adjust(left=0.19, right=0.98, bottom=0.22, top=0.72)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(OUTPUT, bbox_inches="tight", pad_inches=0.05)
     plt.close(figure)
 

@@ -134,8 +134,8 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
 
     ax.set_yscale("log")
     ax.set_xticks(x, [str(config) for config in block_configs])
-    ax.set_xlabel(r"Grid partitions in $C_t$", labelpad=0.8)
-    ax.set_ylabel(r"Absolute deviation from $F_K(X,C)$", labelpad=0.8)
+    ax.set_xlabel(r"Grid partitions in $\widetilde{C}_k$", labelpad=0.8)
+    ax.set_ylabel("Absolute deviation from ref.", labelpad=0.8)
     ax.tick_params(axis="x", which="both", pad=1.2)
     ax.tick_params(axis="y", which="both", pad=1.2, labelrotation=0)
 

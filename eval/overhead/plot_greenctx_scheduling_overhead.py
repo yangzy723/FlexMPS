@@ -85,6 +85,7 @@ def main():
                 frameon=False, handlelength=1.35, columnspacing=0.75,
                 handletextpad=0.35)
     figure.subplots_adjust(left=0.18, right=0.98, bottom=0.13, top=0.63)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(OUTPUT, bbox_inches="tight", pad_inches=0.05)
     plt.close(figure)
 

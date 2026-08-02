@@ -108,7 +108,7 @@ def build_legend_handles() -> list[Line2D]:
             color=RESHAPING_COLOR,
             linewidth=LINE_WIDTH,
             marker="o",
-            markersize=16,
+            markersize=18,
             label="Kernel Reshaping",
         ),
         Line2D(
@@ -117,8 +117,8 @@ def build_legend_handles() -> list[Line2D]:
             color=PROTEUS_COLOR,
             linewidth=LINE_WIDTH,
             marker="s",
-            markersize=16,
-            label="PROTEUS",
+            markersize=18,
+            label="proteus",
         ),
         Line2D(
             [0],
@@ -127,7 +127,7 @@ def build_legend_handles() -> list[Line2D]:
             linewidth=4.0,
             linestyle="--",
             alpha=0.7,
-            label="Absolute Determinism",
+            label="Bitwise Equality",
         ),
         Line2D(
             [0],
@@ -136,7 +136,7 @@ def build_legend_handles() -> list[Line2D]:
             marker="X",
             markerfacecolor=FLIP_COLOR,
             markeredgecolor="black",
-            markersize=20,
+            markersize=22,
             markeredgewidth=1.5,
             label="Argmax Flip Occurred",
         ),
@@ -188,14 +188,15 @@ def main() -> None:
         bbox_to_anchor=(0.085, 0.935, 0.912, 0.06),
         mode="expand",
         frameon=False,
-        fontsize=34,
-        handlelength=1.25,
+        fontsize=38,
+        handlelength=1.35,
         handletextpad=0.2,
         borderpad=0.0,
         borderaxespad=0.0,
         columnspacing=0.7,
     )
 
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT_PATH, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved determinism plot to {OUTPUT_PATH}")

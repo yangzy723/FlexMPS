@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
@@ -62,11 +64,11 @@ row_labels = ["Azure", "LongBench", "BurstGPT"]
 
 metric_specs = {
     "TTFT": {
-        "labels": ["Avg", "P50", "P90", "P99"],
+        "labels": ["Avg", "p50", "p90", "p99"],
         "title": "TTFT",
     },
     "TPOT": {
-        "labels": ["Avg", "P50", "P90", "P99"],
+        "labels": ["Avg", "p50", "p90", "p99"],
         "title": "TPOT",
     },
     "SLO": {
@@ -360,5 +362,7 @@ fig.subplots_adjust(
 # Output
 # ============================================================
 
-plt.savefig("policy_comparison.pdf", bbox_inches="tight")
+output_path = Path(__file__).resolve().parent / "policy_comparison.pdf"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+plt.savefig(output_path, bbox_inches="tight")
 plt.show()
