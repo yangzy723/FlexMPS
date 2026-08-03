@@ -20,7 +20,7 @@ plt.rcParams.update({
 # ========== Workloads and data ==========
 job1_labels = ['ResNet', 'ResNet', 'BERT', 'BERT']
 job2_labels = ['Llama 3', 'GPT-J', 'Llama 3', 'GPT-J']
-gpu_counts = ['1', '1', '1', '1']
+gpu_counts = ['H20×1', 'H20×1', 'H20×1', 'H20×1']
 
 systems = ['Temporal', 'MIG', 'MPS', 'Orion', 'LithOS', 'PROTEUS']
 
@@ -136,10 +136,10 @@ format_axis(
 
 workload_table = axes[1].table(
     cellText=[job1_labels, job2_labels, gpu_counts],
-    rowLabels=['Job 1', 'Job 2', 'GPU\ncount'],
+    rowLabels=['Job 1', 'Job 2', 'GPU'],
     cellLoc='center',
     rowLoc='right',
-    bbox=[0.0, -0.65, 1.0, 0.56],
+    bbox=[0.0, -0.51, 1.0, 0.42],
     edges='open',
 )
 workload_table.auto_set_font_size(False)

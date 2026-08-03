@@ -41,7 +41,7 @@ job2_labels = [
     'Qwen3.5-122B-A10B\nQLoRA †',
 ]
 
-gpu_counts = ['1', '1', '1', '1', '1', '1', '8', '8']
+gpu_counts = ['H20×1', 'H20×1', 'H20×1', 'H20×1', 'H20×1', 'H20×1', 'H20×8', 'H20×8']
 
 # Job 1 数据
 job1_throughput = {
@@ -70,7 +70,7 @@ hatches = ['---', r'\\', '///', 'xxx', '...', '|||']
 x = np.arange(len(job1_labels))
 width = 0.13
 
-fig, ax = plt.subplots(figsize=(14.6, 5.0))
+fig, ax = plt.subplots(figsize=(14.6, 4.9))
 
 # ========== 绘制逻辑 ==========
 for i, sys in enumerate(plot_systems):
@@ -99,7 +99,7 @@ for i, sys in enumerate(plot_systems):
                      bbox=dict(boxstyle='square,pad=0.06', facecolor='white', edgecolor='none', alpha=0.78))
 
 # ========== 坐标轴、背景与 Upper Bound ==========
-ax.set_ylabel('Normalized Throughput', fontsize=15, fontweight='bold', labelpad=9)
+ax.set_ylabel('Normalized Throughput', fontsize=14, fontweight='bold', labelpad=9)
 ax.set_xlim(-0.5, len(job1_labels) - 0.5)
 ax.set_xticks([])
 
@@ -109,10 +109,10 @@ ax.tick_params(axis='y', labelsize=12, direction='in', length=3.5)
 # Nature-style workload rows replace letter-only configuration IDs.
 workload_table = ax.table(
     cellText=[job1_labels, job2_labels, gpu_counts],
-    rowLabels=['Job 1', 'Job 2', 'GPU\ncount'],
+    rowLabels=['Job 1', 'Job 2', 'GPU'],
     cellLoc='center',
     rowLoc='right',
-    bbox=[0.0, -0.57, 1.0, 0.51],
+    bbox=[0.0, -0.48, 1.0, 0.42],
     edges='open',
 )
 workload_table.auto_set_font_size(False)
@@ -164,8 +164,8 @@ fig.text(
     color='#444444',
 )
 
-fig.subplots_adjust(left=0.085, right=0.995, bottom=0.325, top=0.855)
+fig.subplots_adjust(left=0.085, right=0.985, bottom=0.385, top=0.855)
 output_path = Path(__file__).resolve().parent / 'colocated_trainings.pdf'
 output_path.parent.mkdir(parents=True, exist_ok=True)
-fig.savefig(output_path, bbox_inches='tight', format='pdf')
+fig.savefig(output_path, bbox_inches='tight', pad_inches=0.02, format='pdf')
 plt.close(fig)

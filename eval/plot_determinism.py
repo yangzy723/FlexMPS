@@ -118,7 +118,7 @@ def build_legend_handles() -> list[Line2D]:
             linewidth=LINE_WIDTH,
             marker="s",
             markersize=18,
-            label="proteus",
+            label="PROTEUS",
         ),
         Line2D(
             [0],
@@ -158,7 +158,7 @@ def main() -> None:
         data["drift_both_logits"],
         data["drift_bs_only_logits"],
         flip_indices,
-        "Stage 1: LM Head MatMul Logit Drift",
+        "Stage 1: LM-Head MatMul Logit Drift",
     )
     draw_stage(
         ax2,
