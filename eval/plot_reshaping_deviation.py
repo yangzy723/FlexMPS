@@ -199,20 +199,11 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
         columnspacing=0.52,
     )
 
-    pdf_path = output_dir / "reshaping_numerical_deviation.pdf"
-    png_path = output_dir / "reshaping_numerical_deviation.png"
+    pdf_path = output_dir / "reshaping_deviation.pdf"
     fig.savefig(pdf_path, format="pdf", bbox_inches="tight", pad_inches=0.012)
-    fig.savefig(
-        png_path,
-        format="png",
-        bbox_inches="tight",
-        pad_inches=0.012,
-        dpi=300,
-    )
     plt.close(fig)
 
     print(f"Generated: {pdf_path}")
-    print(f"Generated: {png_path}")
 
 
 def main():

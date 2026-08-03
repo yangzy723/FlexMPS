@@ -13,8 +13,7 @@ PANELS = (
     (r"(a) Reduction Kernel ($\times 10^{-2}$)", ROOT / "reduction.csv", 64, 1e2, 16),
     (r"(b) Split-K GEMM Kernel ($\times 10^{-3}$)", ROOT / "splitk_gemm.csv", 1, 1e3, 15),
 )
-OUTPUT_PNG = ROOT / "operator_determinism_distribution.png"
-OUTPUT_PDF = ROOT / "operator_determinism_distribution.pdf"
+OUTPUT_PDF = ROOT / "operator_determinism.pdf"
 
 RESHAPED_COLOR = "#D1A45F"
 RESHAPED_EDGE = "#8A642E"
@@ -178,11 +177,10 @@ def main() -> None:
         wspace=0.08,
     )
 
-    OUTPUT_PNG.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT_PNG, bbox_inches="tight")
+    OUTPUT_PDF.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT_PDF, bbox_inches="tight")
     plt.close(fig)
-    print(f"Saved operator determinism plots to {OUTPUT_PNG} and {OUTPUT_PDF}")
+    print(f"Saved operator determinism plot to {OUTPUT_PDF}")
 
 
 if __name__ == "__main__":

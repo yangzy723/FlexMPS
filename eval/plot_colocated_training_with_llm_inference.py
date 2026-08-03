@@ -184,7 +184,7 @@ fig.text(
 fig.subplots_adjust(left=0.125, right=0.992, bottom=0.185, top=0.790, hspace=0.31)
 output_path = (
     Path(__file__).resolve().parent
-    / 'colocated_training_with_LLM_inference.pdf'
+    / 'colocated_training_with_llm_inference.pdf'
 )
 output_path.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(output_path, bbox_inches='tight', format='pdf')

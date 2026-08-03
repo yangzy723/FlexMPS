@@ -72,7 +72,7 @@ MPLBACKEND=Agg python plot_operator_determinism.py
 
 The figure focuses on FP32 accumulation drift. It combines all non-baseline variants into normalized histograms whose bar heights report the percentage of trials in each bin. The Reduction Kernel and Split-K GEMM Kernel panels use independent linear scales, with the `x10^-2` and `x10^-3` units integrated into their titles. The dashed zero line denotes PROTEUS fixed-structure execution. FP16 and BF16 results remain available in the CSV files but are intentionally omitted from this figure.
 
-The source datasets, `reduction.csv` and `splitk_gemm.csv`, are versioned so the figure can be reproduced. The generated PNG and PDF are intentionally excluded from version control.
+The source datasets, `reduction.csv` and `splitk_gemm.csv`, are versioned so the figure can be reproduced. The generated PDF is intentionally excluded from version control.
 
 ## CSV fields
 

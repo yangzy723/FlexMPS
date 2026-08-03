@@ -99,12 +99,12 @@ for i, sys in enumerate(plot_systems):
                      bbox=dict(boxstyle='square,pad=0.06', facecolor='white', edgecolor='none', alpha=0.78))
 
 # ========== 坐标轴、背景与 Upper Bound ==========
-ax.set_ylabel('Normalized Throughput', fontsize=14, fontweight='bold', labelpad=9)
+ax.set_ylabel('Normalized\nThroughput', fontsize=14, fontweight='bold', labelpad=5)
 ax.set_xlim(-0.5, len(job1_labels) - 0.5)
 ax.set_xticks([])
 
 ax.set_ylim(0, 2.22)
-ax.tick_params(axis='y', labelsize=12, direction='in', length=3.5)
+ax.set_yticks([])
 
 # Nature-style workload rows replace letter-only configuration IDs.
 workload_table = ax.table(
@@ -112,7 +112,7 @@ workload_table = ax.table(
     rowLabels=['Job 1', 'Job 2', 'GPU'],
     cellLoc='center',
     rowLoc='right',
-    bbox=[0.0, -0.48, 1.0, 0.42],
+    bbox=[0.0, -0.72, 1.0, 0.63],
     edges='open',
 )
 workload_table.auto_set_font_size(False)
@@ -131,6 +131,17 @@ ax.set_axisbelow(True)
 
 # 绘制 Upper Bound 虚线
 ax.axhline(y=2.0, color='#666666', linestyle='--', linewidth=1.5, zorder=0)
+ax.annotate(
+    '2',
+    xy=(0.006, 2.0),
+    xycoords=('axes fraction', 'data'),
+    xytext=(0, 3),
+    textcoords='offset points',
+    ha='left',
+    va='bottom',
+    fontsize=12,
+    color='#333333',
+)
 ax.text(0.995, 2.03, 'Ideal Upper Bound (2.0)',
         transform=ax.get_yaxis_transform(),
         color='#444444', fontsize=12, fontweight='bold',
@@ -156,7 +167,7 @@ fig.legend(
 )
 fig.text(
     0.995,
-    0.918,
+    0.905,
     '† QLoRA configurations use CPU offload.',
     ha='right',
     va='center',
@@ -164,7 +175,7 @@ fig.text(
     color='#444444',
 )
 
-fig.subplots_adjust(left=0.085, right=0.985, bottom=0.385, top=0.855)
+fig.subplots_adjust(left=0.085, right=0.985, bottom=0.542, top=0.855)
 output_path = Path(__file__).resolve().parent / 'colocated_trainings.pdf'
 output_path.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(output_path, bbox_inches='tight', pad_inches=0.02, format='pdf')

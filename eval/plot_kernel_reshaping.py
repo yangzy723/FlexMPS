@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -26,8 +28,12 @@ operators = [
     "GEMV",
 ]
 
+# Keep all source rows in the data arrays, but omit Salus visually.
+display_rows = np.array([0, 1, 2, 4, 5, 6])
+display_systems = [systems[index] for index in display_rows]
+
 # Compress all-zero rows while preserving emphasis on rows with deviations.
-row_heights = np.array([0.58, 0.58, 0.58, 0.58, 0.58, 1.18, 1.18])
+row_heights = np.array([0.58, 0.58, 0.58, 0.58, 1.18, 1.18])
 row_edges = np.concatenate(([0.0], np.cumsum(row_heights)))
 row_centers = (row_edges[:-1] + row_edges[1:]) / 2
 
@@ -61,11 +67,11 @@ mpl.rcParams.update({
     "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "mathtext.fontset": "stix",
 
-    "font.size": 8,
-    "axes.titlesize": 8.5,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7.5,
-    "ytick.labelsize": 7.5,
+    "font.size": 9,
+    "axes.titlesize": 9.5,
+    "axes.labelsize": 9,
+    "xtick.labelsize": 8.5,
+    "ytick.labelsize": 8.5,
 
     "axes.linewidth": 0.6,
     "xtick.major.width": 0.6,
@@ -122,7 +128,8 @@ def annotation_color(value):
 
 
 def draw_panel(ax, data, title, show_ylabels):
-    masked = np.ma.masked_equal(data, 0)
+    display_data = data[display_rows]
+    masked = np.ma.masked_equal(display_data, 0)
 
     image = ax.pcolormesh(
         np.arange(len(operators) + 1) - 0.5,
@@ -146,23 +153,26 @@ def draw_panel(ax, data, title, show_ylabels):
 
     ax.set_yticks(row_centers)
     if show_ylabels:
-        ax.set_yticklabels(systems)
-        ax.get_yticklabels()[0].set_fontweight("bold")
+        ax.set_yticklabels(display_systems)
+        yticklabels = ax.get_yticklabels()
+        yticklabels[0].set_fontweight("bold")
+        for label in yticklabels[1:]:
+            label.set_fontsize(9.5)
     else:
         ax.tick_params(axis="y", labelleft=False, length=0)
 
     # Separate fixed-structure systems from reshaping systems.
     ax.axhline(
-        row_edges[5],
+        row_edges[4],
         color="#333333",
         linewidth=0.8,
         linestyle=(0, (2.5, 1.5)),
     )
 
     # Cell annotations.
-    for row in range(data.shape[0]):
-        for col in range(data.shape[1]):
-            value = data[row, col]
+    for row in range(display_data.shape[0]):
+        for col in range(display_data.shape[1]):
+            value = display_data[row, col]
 
             ax.text(
                 col,
@@ -170,7 +180,7 @@ def draw_panel(ax, data, title, show_ylabels):
                 format_value(value),
                 ha="center",
                 va="center",
-                fontsize=8 if row >= 5 else 6.4,
+                fontsize=8.6 if row >= 4 else 7.2,
                 color=annotation_color(value),
             )
 
@@ -187,13 +197,13 @@ def draw_panel(ax, data, title, show_ylabels):
 # ============================================================
 
 # Approximately the width of a two-column paper figure.
-fig = plt.figure(figsize=(7.05, 2.05))
+fig = plt.figure(figsize=(7.05, 1.85))
 grid = fig.add_gridspec(
     1,
-    3,
-    width_ratios=[1, 1, 0.026],
-    left=0.145,
-    right=0.905,
+    2,
+    width_ratios=[1, 1],
+    left=0.130,
+    right=0.990,
     bottom=0.255,
     top=0.865,
     wspace=0.075,
@@ -203,9 +213,8 @@ axes = [
     fig.add_subplot(grid[0, 1]),
 ]
 axes[1].sharey(axes[0])
-cbar_ax = fig.add_subplot(grid[0, 2])
 
-image = draw_panel(
+draw_panel(
     axes[0],
     data_64,
     r"(a) Block size = 64",
@@ -219,45 +228,10 @@ draw_panel(
     show_ylabels=False,
 )
 
-# Shared colorbar.
-cbar = fig.colorbar(
-    image,
-    cax=cbar_ax,
-    orientation="vertical",
-)
-
-cbar.set_label(
-    "Max Numerical Deviation",
-    rotation=90,
-    labelpad=5,
-)
-
-cbar.ax.tick_params(
-    labelsize=6.8,
-    width=0.5,
-    length=2,
-)
-
-cbar.outline.set_linewidth(0.5)
-
-# Explicit ticks improve readability of the logarithmic scale.
-cbar.set_ticks([1e-4, 1e-3, 1e-2, 1e-1])
-cbar.set_ticklabels([
-    r"$10^{-4}$",
-    r"$10^{-3}$",
-    r"$10^{-2}$",
-    r"$10^{-1}$",
-])
+output_dir = Path(__file__).resolve().parent
 
 plt.savefig(
-    "kernel_reshaping_heatmap.pdf",
-    bbox_inches="tight",
-    pad_inches=0.01,
-)
-
-plt.savefig(
-    "kernel_reshaping_heatmap.png",
-    dpi=600,
+    output_dir / "kernel_reshaping.pdf",
     bbox_inches="tight",
     pad_inches=0.01,
 )
