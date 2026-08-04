@@ -11,9 +11,9 @@ INPUT = HERE / "greenctx_scheduling_overhead.csv"
 OUTPUT = HERE / "greenctx_scheduling_overhead.pdf"
 SCENARIOS = [
     ("native_gemm_baseline", "Native"),
-    ("greenctx_no_pool_policy_350", "GreenCtx w/o Pool"),
-    ("greenctx_pool_policy_350", "GreenCtx + Flat Pool"),
-    ("greenctx_pool_policy_32", "GreenCtx + Hierarchy Pool"),
+    ("greenctx_no_pool_policy_350", r"$\mathtt{pCtx}$ w/o Pool"),
+    ("greenctx_pool_policy_350", r"$\mathtt{pCtx}$ + Flat Pool"),
+    ("greenctx_pool_policy_32", r"$\mathtt{pCtx}$ + Hierarchy Pool"),
 ]
 
 
@@ -49,7 +49,7 @@ def main():
         "axes.labelweight": "normal",
         "xtick.labelsize": 8.5,
         "ytick.labelsize": 8.5,
-        "legend.fontsize": 9.2,
+        "legend.fontsize": 10.2,
         "axes.linewidth": 0.9,
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
@@ -66,7 +66,8 @@ def main():
                        edgecolor="black", linewidth=0.8, hatch=hatch)
         bars.append(bar[0])
 
-    axis.set_ylabel("p95 latency (ms)", fontsize=9.5)
+    axis.set_ylabel("p95 Latency (ms)", fontsize=10.5)
+    axis.yaxis.set_label_coords(-0.06, 0.58)
     axis.set_xticks([])
     axis.set_xlim(x_positions[0] - 0.34, x_positions[-1] + 0.34)
     axis.set_ylim(0, 2.62)
@@ -74,7 +75,19 @@ def main():
 
     for index, (bar, value, overhead) in enumerate(
             zip(bars, latency_ms, overhead_pct)):
-        text = f"{value:.3f}" if index == 0 else f"{value:.3f}\n(+{overhead:.1f}%)"
+        if index == 0:
+            text = f"{value:.3f}"
+        else:
+            # Compute the annotation from the same three-decimal values shown
+            # on the bars so that the displayed latency and percentage agree.
+            displayed_baseline = round(latency_ms[0], 3)
+            displayed_value = round(value, 3)
+            displayed_overhead = (
+                100.0
+                * (displayed_value - displayed_baseline)
+                / displayed_baseline
+            )
+            text = f"{value:.3f}\n(+{displayed_overhead:.1f}%)"
         axis.annotate(text,
                       xy=(bar.get_x() + bar.get_width() / 2, value),
                       xytext=(0, 5), textcoords="offset points",

@@ -51,10 +51,10 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
         ],
         "mathtext.fontset": "stix",
         "font.size": 7.1,
-        "axes.labelsize": 8.2,
+        "axes.labelsize": 9.2,
         "xtick.labelsize": 7.7,
         "ytick.labelsize": 7.7,
-        "legend.fontsize": 7.7,
+        "legend.fontsize": 9.2,
         "axes.linewidth": 0.75,
         "axes.edgecolor": "#333333",
         "axes.labelcolor": "#202020",
@@ -91,7 +91,7 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
 
     x = np.arange(len(block_configs), dtype=float)
     offsets = np.linspace(-0.10, 0.10, len(precisions)) if len(precisions) > 1 else [0]
-    fig, ax = plt.subplots(figsize=(2, 1.88), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(2.00, 1.70), constrained_layout=True)
     plotted_values = []
 
     for precision, offset in zip(precisions, offsets):
@@ -134,10 +134,20 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
 
     ax.set_yscale("log")
     ax.set_xticks(x, [str(config) for config in block_configs])
-    ax.set_xlabel(r"Grid partitions in $\widetilde{C}_k$", labelpad=0.8)
-    ax.set_ylabel("Absolute deviation from ref.", labelpad=0.8)
-    ax.tick_params(axis="x", which="both", pad=1.2)
-    ax.tick_params(axis="y", which="both", pad=1.2, labelrotation=0)
+    ax.set_xlabel(
+        r"Grid Partitions in $\widetilde{C}_k$",
+        fontsize=10.2,
+        labelpad=0.8,
+    )
+    ax.set_ylabel("Absolute Deviation from Ref.", labelpad=0.8)
+    ax.tick_params(axis="x", which="both", pad=1.2, labelsize=9.5)
+    ax.tick_params(
+        axis="y",
+        which="both",
+        pad=1.2,
+        labelrotation=0,
+        labelsize=9.5,
+    )
 
     ax.yaxis.set_major_locator(LogLocator(base=10.0))
     ax.yaxis.set_major_formatter(LogFormatterMathtext(base=10.0))
@@ -148,7 +158,7 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
     log_min, log_max = np.log10([values.min(), values.max()])
     padding = max(0.08 * (log_max - log_min), 0.07)
     ax.set_ylim(10 ** (log_min - padding), 10 ** (log_max + padding))
-    ax.set_xlim(-0.42, len(block_configs) - 0.58)
+    ax.set_xlim(-0.28, len(block_configs) - 0.72)
 
     ax.grid(
         axis="y",
@@ -170,7 +180,7 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
             markerfacecolor=PRECISION_STYLE[precision]["color"],
             markeredgecolor=PRECISION_STYLE[precision]["color"],
             markeredgewidth=0.8,
-            markersize=3.8,
+            markersize=4.6,
             label=precision,
         )
         for precision in precisions
@@ -179,24 +189,24 @@ def plot_reshaping_deviation(block_configs, results, output_dir):
         Line2D(
             [0], [0], marker="o", linestyle="none",
             markerfacecolor="#4A4A4A", markeredgecolor="#4A4A4A",
-            markeredgewidth=0.75, markersize=3.7, label="Mean",
+            markeredgewidth=0.75, markersize=4.5, label="Mean",
         ),
         Line2D(
             [0], [0], marker="o", linestyle="none",
             markerfacecolor="white", markeredgecolor="#4A4A4A",
-            markeredgewidth=0.95, markersize=3.7, label="Max",
+            markeredgewidth=0.95, markersize=4.5, label="Max",
         ),
     ]
     ax.legend(
         handles=precision_handles + statistic_handles,
         loc="lower left",
-        bbox_to_anchor=(0.0, 1.01),
+        bbox_to_anchor=(-0.12, 1.01),
         ncol=4,
         frameon=False,
         borderaxespad=0.0,
-        handlelength=0.68,
-        handletextpad=0.24,
-        columnspacing=0.52,
+        handlelength=0.60,
+        handletextpad=0.20,
+        columnspacing=0.42,
     )
 
     pdf_path = output_dir / "reshaping_deviation.pdf"

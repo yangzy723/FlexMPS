@@ -45,7 +45,7 @@ def main():
         "axes.labelsize": 8.2,
         "xtick.labelsize": 8.5,
         "ytick.labelsize": 8.5,
-        "legend.fontsize": 9.2,
+        "legend.fontsize": 10.2,
         "axes.linewidth": 0.9,
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
@@ -56,18 +56,19 @@ def main():
     mps_color = "#4C78A8"
 
     axis.plot(green["level"], green["gpu"], marker="o", markersize=4.6,
-              linewidth=1.8, color=green_color, label="GreenCtx GPU")
+              linewidth=1.8, color=green_color, label=r"$\mathtt{pCtx}$ GPU")
     axis.plot(mps["level"], mps["gpu"], marker="s", markersize=4.4,
               linewidth=1.8, color=mps_color, label="MPS-Pool GPU")
     axis.plot(green["level"], green["rss"], marker="o", markersize=3.8,
               linewidth=1.45, linestyle="--", color=green_color,
-              label="GreenCtx RSS")
+              label=r"$\mathtt{pCtx}$ RSS")
     axis.plot(mps["level"], mps["rss"], marker="s", markersize=3.6,
               linewidth=1.45, linestyle="--", color=mps_color,
               label="MPS-Pool RSS")
 
-    axis.set_xlabel("Hierarchy level")
-    axis.set_ylabel("Memory overhead (MiB)")
+    axis.set_xlabel("Hierarchy Level", fontsize=9.5)
+    axis.set_ylabel("Memory Overhead (MiB)", fontsize=9.5)
+    axis.yaxis.set_label_coords(-0.06, 0.58)
     axis.set_xticks(green["level"])
     axis.set_xlim(0.8, max(green["level"]) + 1.25)
     axis.set_ylim(0, 2700)

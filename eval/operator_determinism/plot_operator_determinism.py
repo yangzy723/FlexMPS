@@ -46,7 +46,7 @@ def configure_style() -> None:
         "font.size": 11,
         "axes.titlesize": 20,
         "xtick.labelsize": 15,
-        "ytick.labelsize": 11,
+        "ytick.labelsize": 15,
         "legend.fontsize": 19,
         "axes.linewidth": 1.0,
         "axes.spines.top": False,
@@ -98,7 +98,7 @@ def draw_histogram(
         edgecolor=RESHAPED_EDGE,
         alpha=0.84,
         linewidth=1.05,
-        rwidth=0.88,
+        rwidth=0.76,
         zorder=3,
     )
     ax.axvline(
@@ -158,7 +158,7 @@ def main() -> None:
         draw_histogram(ax, values, title, bins)
 
     axes[0].set_ylabel("Trial Frequency (%)", fontsize=19, labelpad=8)
-    fig.supxlabel("Numerical Drift", fontsize=19, y=0.02)
+    fig.supxlabel("Numerical Drift", fontsize=20, y=0.02)
     fig.legend(
         handles=build_legend_handles(),
         loc="upper center",

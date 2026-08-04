@@ -91,8 +91,8 @@ plt.rcParams.update({
     "axes.titlesize": 15.5,
     "axes.titleweight": "bold",
 
-    "xtick.labelsize": 14.5,
-    "ytick.labelsize": 13.5,
+    "xtick.labelsize": 15.5,
+    "ytick.labelsize": 14.5,
 
     "legend.fontsize": 17.0,
 
@@ -114,14 +114,14 @@ policy_markers = {
     "TPOT-First": "s",
 }
 
-connector_color = "#A9A9A9"
+connector_color = "#777777"
 
 improve_color = "#1D7D3E"   # lower is better
 degrade_color = "#B24633"
 neutral_color = "#333333"
 
-point_size = 30
-connector_width = 1.45
+point_size = 40
+connector_width = 1.65
 horizontal_offset = 0.10
 
 # ============================================================
@@ -239,12 +239,21 @@ def draw_panel(ax, metric, base_raw, tpot_raw, xlabels):
         )
 
         label_y = max(b_plot, t_plot) + 0.050 * yspan
+        if i == 0:
+            label_x = x[i] - 0.15
+            label_ha = "left"
+        elif i == len(xlabels) - 1:
+            label_x = x[i] + 0.15
+            label_ha = "right"
+        else:
+            label_x = x[i]
+            label_ha = "center"
         ax.text(
-            x[i], label_y,
+            label_x, label_y,
             change_label(b_raw, t_raw),
-            ha="center",
+            ha=label_ha,
             va="bottom",
-            fontsize=12.8,   # 更大的百分比变化数字
+            fontsize=13.8,
             fontweight="bold",
             color=change_color(b_raw, t_raw),
             bbox=dict(
@@ -273,6 +282,7 @@ fig, axes = plt.subplots(
     nrows=3,
     ncols=3,
     figsize=(7.35, 6.45),
+    gridspec_kw={"width_ratios": [1.08, 1.08, 0.84]},
 )
 
 metrics = ["TTFT", "TPOT", "SLO"]
@@ -320,7 +330,7 @@ legend_handles = [
         markerfacecolor=policy_colors["Throughput-Oriented"],
         markeredgecolor="white",
         markeredgewidth=0.5,
-        markersize=8.2,   # 更大的图例标记
+        markersize=9.0,
         label="Throughput-Oriented",
     ),
     Line2D(
@@ -330,7 +340,7 @@ legend_handles = [
         markerfacecolor=policy_colors["TPOT-First"],
         markeredgecolor="white",
         markeredgewidth=0.5,
-        markersize=8.2,   # 更大的图例标记
+        markersize=9.0,
         label="TPOT-First",
     ),
 ]

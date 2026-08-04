@@ -28,6 +28,14 @@ operators = [
     "GEMV",
 ]
 
+# Linear is zero for every system, so give it less horizontal space and
+# redistribute that space to the informative operator columns.
+column_widths = np.array([1.045, 1.045, 0.82, 1.045, 1.045])
+column_edges = np.concatenate(([-0.5], -0.5 + np.cumsum(column_widths)))
+column_centers = (column_edges[:-1] + column_edges[1:]) / 2
+
+content_fontsize = 12.0
+
 # Keep all source rows in the data arrays, but omit Salus visually.
 display_rows = np.array([0, 1, 2, 4, 5, 6])
 display_systems = [systems[index] for index in display_rows]
@@ -68,10 +76,10 @@ mpl.rcParams.update({
     "mathtext.fontset": "stix",
 
     "font.size": 9,
-    "axes.titlesize": 9.5,
+    "axes.titlesize": 12.5,
     "axes.labelsize": 9,
-    "xtick.labelsize": 8.5,
-    "ytick.labelsize": 8.5,
+    "xtick.labelsize": content_fontsize,
+    "ytick.labelsize": content_fontsize,
 
     "axes.linewidth": 0.6,
     "xtick.major.width": 0.6,
@@ -132,7 +140,7 @@ def draw_panel(ax, data, title, show_ylabels):
     masked = np.ma.masked_equal(display_data, 0)
 
     image = ax.pcolormesh(
-        np.arange(len(operators) + 1) - 0.5,
+        column_edges,
         row_edges,
         masked,
         cmap=cmap,
@@ -142,22 +150,42 @@ def draw_panel(ax, data, title, show_ylabels):
         linewidth=0.45,
     )
 
-    ax.set_xlim(-0.5, len(operators) - 0.5)
+    ax.set_xlim(column_edges[0], column_edges[-1])
     ax.set_ylim(row_edges[-1], 0)
 
     ax.set_title(title, pad=4, fontweight="normal")
 
-    ax.set_xticks(np.arange(len(operators)))
+    ax.set_xticks(column_centers)
     ax.set_xticklabels(operators)
-    ax.tick_params(axis="x", pad=2)
+    ax.tick_params(axis="x", pad=1.0)
+    for index, label in enumerate(ax.get_xticklabels()):
+        label.set_rotation(25)
+        label.set_rotation_mode("anchor")
+        label.set_ha("right")
+        label.set_va("top")
+        label.set_fontsize(content_fontsize)
+        shift_points = -1.5 if index == 0 else 6.0
+        label.set_transform(
+            label.get_transform()
+            + mpl.transforms.ScaledTranslation(
+                shift_points / 72,
+                0,
+                ax.figure.dpi_scale_trans,
+            )
+        )
 
     ax.set_yticks(row_centers)
     if show_ylabels:
         ax.set_yticklabels(display_systems)
         yticklabels = ax.get_yticklabels()
-        yticklabels[0].set_fontweight("bold")
-        for label in yticklabels[1:]:
-            label.set_fontsize(9.5)
+        ax.tick_params(axis="y", pad=3.5)
+        for label in yticklabels:
+            label.set_rotation(15)
+            label.set_rotation_mode("anchor")
+            label.set_ha("right")
+            label.set_va("center")
+            label.set_fontsize(content_fontsize)
+            label.set_fontweight("normal")
     else:
         ax.tick_params(axis="y", labelleft=False, length=0)
 
@@ -175,12 +203,12 @@ def draw_panel(ax, data, title, show_ylabels):
             value = display_data[row, col]
 
             ax.text(
-                col,
+                column_centers[col],
                 row_centers[row],
                 format_value(value),
                 ha="center",
                 va="center",
-                fontsize=8.6 if row >= 4 else 7.2,
+                fontsize=content_fontsize,
                 color=annotation_color(value),
             )
 
@@ -197,14 +225,14 @@ def draw_panel(ax, data, title, show_ylabels):
 # ============================================================
 
 # Approximately the width of a two-column paper figure.
-fig = plt.figure(figsize=(7.05, 1.85))
+fig = plt.figure(figsize=(7.05, 2.18))
 grid = fig.add_gridspec(
     1,
     2,
     width_ratios=[1, 1],
-    left=0.130,
+    left=0.155,
     right=0.990,
-    bottom=0.255,
+    bottom=0.305,
     top=0.865,
     wspace=0.075,
 )

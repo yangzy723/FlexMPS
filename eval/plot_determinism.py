@@ -17,7 +17,7 @@ ZERO_COLOR = "gray"
 
 LINE_WIDTH = 2.0
 MARKER_SIZE = 10
-FLIP_MARKER_SIZE = 180
+FLIP_MARKER_SIZE = 450
 
 
 def configure_style() -> None:
@@ -27,8 +27,8 @@ def configure_style() -> None:
         "font.size": 32,
         "axes.labelsize": 36,
         "axes.labelweight": "bold",
-        "xtick.labelsize": 32,
-        "ytick.labelsize": 32,
+        "xtick.labelsize": 36,
+        "ytick.labelsize": 36,
         "axes.grid": True,
         "grid.alpha": 0.5,
         "grid.linestyle": "--",
@@ -83,7 +83,7 @@ def draw_stage(
             s=FLIP_MARKER_SIZE,
             color=FLIP_COLOR,
             edgecolor="black",
-            linewidth=1.5,
+            linewidth=2.5,
             zorder=5,
         )
         for index in flip_indices:
@@ -98,6 +98,7 @@ def draw_stage(
     ax.set_title(title, fontsize=40, fontweight="bold", pad=12)
     ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
+    ax.yaxis.get_offset_text().set_fontsize(36)
 
 
 def build_legend_handles() -> list[Line2D]:
@@ -108,7 +109,7 @@ def build_legend_handles() -> list[Line2D]:
             color=RESHAPING_COLOR,
             linewidth=LINE_WIDTH,
             marker="o",
-            markersize=18,
+            markersize=21,
             label="Kernel Reshaping",
         ),
         Line2D(
@@ -117,14 +118,14 @@ def build_legend_handles() -> list[Line2D]:
             color=PROTEUS_COLOR,
             linewidth=LINE_WIDTH,
             marker="s",
-            markersize=18,
+            markersize=21,
             label="PROTEUS",
         ),
         Line2D(
             [0],
             [0],
             color=ZERO_COLOR,
-            linewidth=4.0,
+            linewidth=4.8,
             linestyle="--",
             alpha=0.7,
             label="Bitwise Equality",
@@ -136,9 +137,9 @@ def build_legend_handles() -> list[Line2D]:
             marker="X",
             markerfacecolor=FLIP_COLOR,
             markeredgecolor="black",
-            markersize=22,
+            markersize=25,
             markeredgewidth=1.5,
-            label="Argmax Flip Occurred",
+            label="Argmax Flip",
         ),
     ]
 
@@ -151,7 +152,7 @@ def main() -> None:
     flip_indices = [int(index) for index in data.get("flip_both_indices", [])]
 
     configure_style()
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 11.2), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24, 12.0), sharex=True)
 
     draw_stage(
         ax1,
@@ -188,7 +189,7 @@ def main() -> None:
         bbox_to_anchor=(0.085, 0.935, 0.912, 0.06),
         mode="expand",
         frameon=False,
-        fontsize=38,
+        fontsize=42,
         handlelength=1.35,
         handletextpad=0.2,
         borderpad=0.0,
