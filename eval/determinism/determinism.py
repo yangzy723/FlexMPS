@@ -160,7 +160,7 @@ def main():
         if not torch.equal(base_top5, torch.topk(target_probs_both, k=5, dim=1).indices): 
             top5_miss_both += 1
             
-        # 3. Change Batch Only -> 对应 CoGPU
+        # 3. Change Batch Only -> 对应 Vitamin-E
         logits_bs_only = run_lm_head_split_k(batched_hidden, weight, 16, 128, BASE_MATMUL_BLOCK_K)
         probs_bs_only = run_triton_softmax(logits_bs_only, BASE_SOFTMAX_BLOCK_V)
         

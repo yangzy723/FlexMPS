@@ -13,7 +13,7 @@ test.sh
 /eval/operator_determinism/operator_determinism_distribution.png
 scheduler_service
 
-/CoGPU-test
+/Vitamin-E-test
 
 !eval/overhead/*.csv
 __pycache__/

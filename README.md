@@ -1,17 +1,17 @@
-# CoGPU
+# Vitamin-E
 ## General
 
 ```shell
 # env
 source <CONDA_INSTALL_DIR>/bin/activate
-conda create -y -n <CONDA_NAME>
-conda activate <CONDA_NAME>
+conda create -y -n Vitamin-E
+conda activate Vitamin-E
 ```
 
 ```shell
 # code
-git clone https://github.com/yangzy723/CoGPU.git
-cd CoGPU
+git clone https://github.com/yangzy723/Vitamin-E.git Vitamin-E
+cd Vitamin-E
 git submodule sync
 git submodule update --init --recursive
 ```

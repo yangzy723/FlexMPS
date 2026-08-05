@@ -1,4 +1,4 @@
-(cogpu) yzy@klss:~/CoGPU/CoGPU_test/determinism_performance$ python inference_worker.py 
+(Vitamin-E) yzy@klss:~/Vitamin-E/Vitamin-E_test/determinism_performance$ python inference_worker.py
 [Inference] 加载模型 /data/datasets/models-hf/Qwen3-32B ...
 `torch_dtype` is deprecated! Use `dtype` instead!
 Loading checkpoint shards: 100%|███████████████████████████████████████████████████████████████| 17/17 [05:04<00:00, 17.93s/it]
@@ -21,7 +21,7 @@ Loading checkpoint shards: 100%|████████████████
 P99 TTFT (首字延迟): 90.01 ms
 P99 TPOT (单字延迟): 51.87 ms
 ==================================================
-(cogpu) yzy@klss:~/CoGPU/CoGPU_test/determinism_performance$ python inference_worker.py 
+(Vitamin-E) yzy@klss:~/Vitamin-E/Vitamin-E_test/determinism_performance$ python inference_worker.py
 [Inference] 加载模型 /data/datasets/models-hf/Qwen3-32B ...
 `torch_dtype` is deprecated! Use `dtype` instead!
 Loading checkpoint shards: 100%|███████████████████████████████████████████████████████████████| 17/17 [00:18<00:00,  1.09s/it]
